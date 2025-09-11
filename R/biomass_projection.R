@@ -1,4 +1,5 @@
-#' Project forest biomass over time using mortality, upgrowth, and recruitment models
+#' Project forest biomass over time using mortality, upgrowth, and recruitment
+#' models
 #'
 #' This function projects forest biomass dynamics over specified years using
 #' pre-trained random forest models for mortality, upgrowth, and recruitment.
@@ -11,7 +12,8 @@
 #'   use all available cores minus one.
 #' @param plot_data Data frame containing plot data with species and diameter
 #'   group information.
-#' @param plot_id Optional specific plot ID to process. If NULL, processes all plots.
+#' @param plot_id Optional specific plot ID to process. If NULL, processes all
+#' plots.
 #' @param m_model Path to mortality model RDS file.
 #' @param u_model Path to upgrowth model RDS file.
 #' @param r_model Path to recruitment model RDS file.
@@ -29,7 +31,8 @@
 #'   \item Year-level aggregates across plots
 #'   \item Species-level summaries
 #'   \item Diameter group projections
-#'   \item Various combinations of plot, species, diameter group, and year summaries
+#'   \item Various combinations of plot, species, diameter group, and year
+#'   summaries
 #' }
 #'
 #' @examples
@@ -157,7 +160,8 @@ biomass_projection <- function(output_dir = NULL,
       select(PlotID, Shannon_SPCD, Simpson_SPCD) |> distinct()
 
     pred_vec |>
-      select(-any_of(c("Shannon_DGP","Simpson_DGP","Shannon_SPCD","Simpson_SPCD"))) |>
+      select(-any_of(c("Shannon_DGP","Simpson_DGP",
+                       "Shannon_SPCD","Simpson_SPCD"))) |>
       left_join(dgp_div, by = "PlotID") |>
       left_join(spcd_div, by = "PlotID")
   }
@@ -192,9 +196,12 @@ biomass_projection <- function(output_dir = NULL,
 
     pred_vec <- pred_vec |> mutate(TPH_1 = TPH)
 
-    mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)), drop = FALSE])$predictions)
-    up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)), drop = FALSE])$predictions) / 5
-    rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)), drop = FALSE])$predictions)
+    mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)),
+                                           drop = FALSE])$predictions)
+    up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)),
+                                           drop = FALSE])$predictions) / 5
+    rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)),
+                                           drop = FALSE])$predictions)
 
     up[is.na(up) | up < 0 | pred_vec$DGP >= 20] <- 0
     mort[is.na(mort) | mort < 0] <- 0
@@ -264,7 +271,8 @@ biomass_projection <- function(output_dir = NULL,
   # ---- Process plots ----
   if (nrow(t1) > 1 && cores > 1) {
     # Use parallel processing for multiple plots
-    cat("Running parallel processing for", nrow(t1), "plots using", min(cores, nrow(t1)), "cores\n")
+    cat("Running parallel processing for", nrow(t1),
+        "plots using", min(cores, nrow(t1)), "cores\n")
 
     cl <- makeCluster(min(cores, nrow(t1)))
     registerDoParallel(cl)
@@ -275,7 +283,8 @@ biomass_projection <- function(output_dir = NULL,
       unlink(temp_summary_dir, recursive = TRUE)
     })
 
-    results <- foreach(i = 1:nrow(t1), .packages = c("tidyverse","ranger"), .combine = 'c') %dopar% {
+    results <- foreach(i = 1:nrow(t1), .packages = c("tidyverse","ranger"),
+                       .combine = 'c') %dopar% {
       tryCatch({
         plt_vec <- t1[i, ]
         actual_plot_id <- plt_vec$PlotID[1]  # Get the actual PlotID
@@ -295,14 +304,20 @@ biomass_projection <- function(output_dir = NULL,
 
         # Save using actual PlotID instead of sequential number
         safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
-        write.csv(pred_df, file.path(temp_pred_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
-        write.csv(summary_df, file.path(temp_summary_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
+        write.csv(pred_df, file.path(temp_pred_dir,
+                                     paste0("plot_", safe_plot_id, ".csv")),
+                  row.names = FALSE)
+        write.csv(summary_df, file.path(temp_summary_dir,
+                                        paste0("plot_", safe_plot_id, ".csv")),
+                  row.names = FALSE)
 
-        cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:", actual_plot_id, ")\n")
+        cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:",
+            actual_plot_id, ")\n")
         list(list(pred = pred_df, summary = summary_df))
 
       }, error = function(e) {
-        cat(format(Sys.time(), "%H:%M"), "Error in plot", i, ":", e$message, "\n")
+        cat(format(Sys.time(), "%H:%M"), "Error in plot", i, ":",
+            e$message, "\n")
         NULL
       })
     }
@@ -332,14 +347,20 @@ biomass_projection <- function(output_dir = NULL,
 
         # Save using actual PlotID instead of sequential number
         safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
-        write.csv(pred_df, file.path(temp_pred_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
-        write.csv(summary_df, file.path(temp_summary_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
+        write.csv(pred_df, file.path(temp_pred_dir,
+                                     paste0("plot_", safe_plot_id, ".csv")),
+                  row.names = FALSE)
+        write.csv(summary_df, file.path(temp_summary_dir,
+                                        paste0("plot_", safe_plot_id, ".csv")),
+                  row.names = FALSE)
 
-        cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:", plot_id, ")\n")
+        cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:",
+            plot_id, ")\n")
         results[[i]] <- list(pred = pred_df, summary = summary_df)
 
       }, error = function(e) {
-        cat(format(Sys.time(), "%H:%M"), "Error in plot", i, ":", e$message, "\n")
+        cat(format(Sys.time(), "%H:%M"), "Error in plot", i, ":",
+            e$message, "\n")
         results[[i]] <- NULL
       })
     }
@@ -350,14 +371,18 @@ biomass_projection <- function(output_dir = NULL,
 
   # ---- Combine outputs ----
   # Read from the correct temp directories within model_output
-  all_preds   <- list.files(temp_pred_dir, full.names = TRUE, pattern = "\\.csv$") |>
+  all_preds   <- list.files(temp_pred_dir, full.names = TRUE,
+                            pattern = "\\.csv$") |>
     map_dfr(read.csv)
-  all_summary <- list.files(temp_summary_dir, full.names = TRUE, pattern = "\\.csv$") |>
+  all_summary <- list.files(temp_summary_dir, full.names = TRUE,
+                            pattern = "\\.csv$") |>
     map_dfr(read.csv)
 
   # Save combined files to model_output directory
-  write.csv(all_preds, file.path(summary_output, "all_predictions.csv"), row.names = FALSE)
-  write.csv(all_summary, file.path(summary_output, "all_summaries.csv"), row.names = FALSE)
+  write.csv(all_preds, file.path(summary_output, "all_predictions.csv"),
+            row.names = FALSE)
+  write.csv(all_summary, file.path(summary_output, "all_summaries.csv"),
+            row.names = FALSE)
 
   # ---- Year-level aggregate (across plots) ----
   summary_by_year <- all_summary |>
@@ -386,7 +411,8 @@ biomass_projection <- function(output_dir = NULL,
       .groups = "drop"
     )
 
-  write.csv(summary_by_year, file.path(summary_output, "year_summary.csv"), row.names = FALSE)
+  write.csv(summary_by_year, file.path(summary_output, "year_summary.csv"),
+            row.names = FALSE)
 
   # ---- Additional rollups ----
   species_year <- all_preds |>
@@ -400,7 +426,8 @@ biomass_projection <- function(output_dir = NULL,
       .groups = "drop"
     )
 
-  write.csv(species_year, file.path(summary_output, "species_year.csv"), row.names = FALSE)
+  write.csv(species_year, file.path(summary_output, "species_year.csv"),
+            row.names = FALSE)
 
   plot_species_year <- all_preds |>
     group_by(PlotID, SPCD, Year) |>
@@ -413,7 +440,9 @@ biomass_projection <- function(output_dir = NULL,
       .groups = "drop"
     )
 
-  write.csv(plot_species_year, file.path(summary_output, "plot_species_year.csv"), row.names = FALSE)
+  write.csv(plot_species_year,
+            file.path(summary_output, "plot_species_year.csv"),
+            row.names = FALSE)
 
   dgp_year <- all_preds |>
     group_by(DGP, Year) |>
@@ -440,7 +469,8 @@ biomass_projection <- function(output_dir = NULL,
       .groups = "drop"
     )
 
-  write.csv(plot_dgp_year, file.path(summary_output, "plot_dgp_year.csv"), row.names = FALSE)
+  write.csv(plot_dgp_year, file.path(summary_output, "plot_dgp_year.csv"),
+            row.names = FALSE)
 
   plot_spcd_dgp_year <- all_preds |>
     group_by(PlotID, SPCD, DGP, Year) |>
@@ -453,7 +483,9 @@ biomass_projection <- function(output_dir = NULL,
       .groups = "drop"
     )
 
-  write.csv(plot_spcd_dgp_year, file.path(summary_output, "plot_spcd_dgp_year.csv"), row.names = FALSE)
+  write.csv(plot_spcd_dgp_year,
+            file.path(summary_output, "plot_spcd_dgp_year.csv"),
+            row.names = FALSE)
 
   cat("All outputs written to:", summary_output, "\n")
   return(summary_output)
