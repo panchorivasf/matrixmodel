@@ -32,6 +32,7 @@
 #'                                       data = "plot_species_year_.*\\.csv")
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom plotly plot_ly layout
 #' @importFrom readr read_csv
 #' @importFrom htmlwidgets saveWidget
@@ -71,7 +72,7 @@ heatmap_species_year <- function(plot_id,
   }
 
   # Filter for the specified plot
-  df_plot <- df |> filter(PlotID == plot_id)
+  df_plot <- df %>% filter(PlotID == plot_id)
 
   if (nrow(df_plot) == 0) {
     stop("No data found for PlotID: ", plot_id)
@@ -86,8 +87,8 @@ heatmap_species_year <- function(plot_id,
                 colors = "Viridis",
                 hoverinfo = "text",
                 text = ~glue("Species: {SPCD}<br>Year: {Year}<br>{metric}:
-                             {round(.data[[metric]], 2)}")) |>
-    layout(title = glue("Heatmap of {metric}: Species × Year: Plot {plot_id}"),
+                             {round(.data[[metric]], 2)}")) %>%
+    layout(title = glue("Heatmap of {metric}: Species x Year: Plot {plot_id}"),
            xaxis = list(title = "Year"),
            yaxis = list(title = "Species Code"),
            colorbar = list(title = metric))

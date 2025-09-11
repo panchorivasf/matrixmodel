@@ -28,6 +28,7 @@
 #'                             data = "summary_results__.*\\.csv")
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom plotly plot_ly layout
 #' @importFrom readr read_csv
 #' @importFrom htmlwidgets saveWidget
@@ -64,9 +65,9 @@ ba_components_chart <- function(plot_id,
   }
 
   # Filter for the specified plot and prepare data
-  df_plot <- df |>
-    filter(PlotID == plot_id) |>
-    select(PlotID, Year, rec_BA_total, up_BA_total, mort_BA_total) |>
+  df_plot <- df %>%
+    filter(PlotID == plot_id) %>%
+    select(PlotID, Year, rec_BA_total, up_BA_total, mort_BA_total) %>%
     pivot_longer(-c(PlotID, Year), names_to = "component", values_to = "BA")
 
   if (nrow(df_plot) == 0) {
@@ -74,7 +75,7 @@ ba_components_chart <- function(plot_id,
   }
 
   # Clean up component names for display
-  df_plot <- df_plot |>
+  df_plot <- df_plot %>%
     mutate(component = case_when(
       component == "rec_BA_total" ~ "Recruitment",
       component == "up_BA_total" ~ "Upgrowth",
@@ -90,7 +91,7 @@ ba_components_chart <- function(plot_id,
                    type = 'bar',
                    hoverinfo = 'text',
                    text = ~glue("Component: {component}<br>Year: {Year}<br>BA:
-                                {round(BA, 2)} m2/ha")) |>
+                                {round(BA, 2)} m2/ha")) %>%
     layout(title = glue("BA Components over Time: Plot {plot_id}"),
            yaxis = list(title = "Basal Area (m2/ha)"),
            xaxis = list(title = "Year"),

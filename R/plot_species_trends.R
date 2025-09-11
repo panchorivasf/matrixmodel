@@ -29,6 +29,7 @@
 #'                         data = "plot_species_year_.*\\.csv")
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom plotly plot_ly layout
 #' @importFrom readr read_csv
 #' @importFrom htmlwidgets saveWidget
@@ -68,27 +69,27 @@ plot_species_trends <- function(plot_id,
   }
 
   # Filter for the specified plot
-  df_plot <- df |> filter(PlotID == plot_id)
+  df_plot <- df %>% filter(PlotID == plot_id)
 
   if (nrow(df_plot) == 0) {
     stop("No data found for PlotID: ", plot_id)
   }
 
   # Keep top-N species over whole timeline (by total contribution)
-  top_sp <- df_plot |>
-    group_by(SPCD) |>
-    summarise(tot = sum(.data[[metric]], na.rm = TRUE), .groups = "drop") |>
-    arrange(desc(tot)) |>
-    slice_head(n = top_n) |>
+  top_sp <- df_plot %>%
+    group_by(SPCD) %>%
+    summarise(tot = sum(.data[[metric]], na.rm = TRUE), .groups = "drop") %>%
+    arrange(desc(tot)) %>%
+    slice_head(n = top_n) %>%
     pull(SPCD)
 
-  dplot <- df_plot |> filter(SPCD %in% top_sp)
+  dplot <- df_plot %>% filter(SPCD %in% top_sp)
 
   # Create interactive plot
   p <- plot_ly(dplot, x = ~Year, y = ~.data[[metric]], color = ~factor(SPCD),
                type = 'scatter', mode = 'lines',
                line = list(width = 2), hoverinfo = 'text',
-               text = ~glue("Species: {SPCD}<br>Year: {Year}<br>{metric}: {round(.data[[metric]], 2)}")) |>
+               text = ~glue("Species: {SPCD}<br>Year: {Year}<br>{metric}: {round(.data[[metric]], 2)}")) %>%
     layout(title = glue("{metric} by Species across Years: Plot {plot_id}"),
            yaxis = list(title = metric),
            xaxis = list(title = "Year"),

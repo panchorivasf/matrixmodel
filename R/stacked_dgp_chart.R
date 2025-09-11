@@ -28,6 +28,7 @@
 #'                           data = "plot_dgp_year_.*\\.csv")
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom plotly plot_ly layout
 #' @importFrom readr read_csv
 #' @importFrom htmlwidgets saveWidget
@@ -64,7 +65,7 @@ stacked_dgp_chart <- function(plot_id,
   }
 
   # Filter for the specified plot
-  df_plot <- df |> filter(PlotID == plot_id)
+  df_plot <- df  %>%  filter(PlotID == plot_id)
 
   if (nrow(df_plot) == 0) {
     stop("No data found for PlotID: ", plot_id)

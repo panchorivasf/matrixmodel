@@ -29,6 +29,7 @@
 #'                         data = "plot_spcd_dgp_year_.*\\.csv")
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom plotly plot_ly layout subplot
 #' @importFrom readr read_csv
 #' @importFrom htmlwidgets saveWidget
@@ -67,7 +68,7 @@ species_dgp_grid <- function(plot_id,
   }
 
   # Filter for the specified plot and years
-  df_plot <- df |> filter(PlotID == plot_id, Year %in% years)
+  df_plot <- df %>% filter(PlotID == plot_id, Year %in% years)
 
   if (nrow(df_plot) == 0) {
     stop("No data found for PlotID: ", plot_id, " in specified years")
@@ -77,7 +78,7 @@ species_dgp_grid <- function(plot_id,
   heatmaps <- list()
 
   for (year in years) {
-    year_data <- df_plot |> filter(Year == year)
+    year_data <- df_plot %>% filter(Year == year)
 
     if (nrow(year_data) > 0) {
       hm <- plot_ly(year_data,
@@ -91,7 +92,7 @@ species_dgp_grid <- function(plot_id,
                     text = ~glue("Species: {SPCD}<br>DGP: {DGP}<br>Year:
                                  {Year}<br>{metric}: {round(.data[[metric]],
                                  2)}"),
-                    showscale = (year == years[1]))  |>   # Only show colorbar for first plot
+                    showscale = (year == years[1]))  %>%   # Only show colorbar for first plot
         layout(xaxis = list(title = glue("DGP\nYear {year}")),
                yaxis = list(title = "Species Code"))
 
@@ -100,8 +101,8 @@ species_dgp_grid <- function(plot_id,
   }
 
   # Create subplot grid
-  grid <- subplot(heatmaps, nrows = 1, shareY = TRUE, shareX = TRUE)  |>
-    layout(title = glue("{metric} by Species × DGP: Plot {plot_id}"),
+  grid <- subplot(heatmaps, nrows = 1, shareY = TRUE, shareX = TRUE)  %>%
+    layout(title = glue("{metric} by Species x DGP: Plot {plot_id}"),
            showlegend = FALSE)
 
   if (save_html) {

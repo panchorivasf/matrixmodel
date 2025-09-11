@@ -31,6 +31,7 @@
 #'                                          data = "summary_results__.*\\.csv")
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom plotly plot_ly layout
 #' @importFrom readr read_csv
 #' @importFrom htmlwidgets saveWidget
@@ -68,7 +69,7 @@ plot_totals_per_plot <- function(data = NULL,
                 mode = 'lines',
                 line = list(width = 2, opacity = 0.8), hoverinfo = 'text',
                 text = ~paste('Plot:', PlotID, '<br>Year:', Year, '<br>BA:',
-                              round(BA_total, 2), 'm2/ha')) |>
+                              round(BA_total, 2), 'm2/ha')) %>%
     layout(title = "Basal Area (BA) over time",
            yaxis = list(title = "BA (m2/ha)"),
            xaxis = list(title = "Year"),
@@ -79,7 +80,7 @@ plot_totals_per_plot <- function(data = NULL,
                 mode = 'lines',
                 line = list(width = 2, opacity = 0.8), hoverinfo = 'text',
                 text = ~paste('Plot:', PlotID, '<br>Year:', Year, '<br>N:',
-                              round(N_total, 2), 'TPH')) |>
+                              round(N_total, 2), 'TPH')) %>%
     layout(title = "Tree Density (N) over time",
            yaxis = list(title = "TPH"),
            xaxis = list(title = "Year"),
