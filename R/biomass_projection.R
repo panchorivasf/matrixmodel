@@ -54,7 +54,6 @@
 #' )
 #' }
 #'
-#' @importFrom tidyverse %>%
 #' @importFrom dplyr filter group_by summarise mutate select distinct arrange
 #' @importFrom dplyr transmute if_else lag rename left_join n_distinct
 #' @importFrom dplyr coalesce bind_rows
