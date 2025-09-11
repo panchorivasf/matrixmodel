@@ -90,7 +90,7 @@ plot_species_trends <- function(plot_id,
                type = 'scatter', mode = 'lines',
                line = list(width = 2), hoverinfo = 'text',
                text = ~glue("Species: {SPCD}<br>Year: {Year}<br>{metric}: {round(.data[[metric]], 2)}")) %>%
-    layout(title = glue("{metric} by Species across Years: Plot {plot_id}"),
+    plotly::layout(title = glue("{metric} by Species across Years: Plot {plot_id}"),
            yaxis = list(title = metric),
            xaxis = list(title = "Year"),
            showlegend = TRUE,

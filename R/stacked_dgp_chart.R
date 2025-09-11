@@ -82,7 +82,7 @@ stacked_dgp_chart <- function(plot_id,
                    fill = 'tonexty',
                    hoverinfo = 'text',
                    text = ~glue("DGP: {DGP}<br>Year: {Year}<br>{metric}: {round(.data[[metric]], 2)}")) %>%
-    layout(title = glue("Stacked {metric} by DGP - Plot {plot_id}"),
+    plotly::layout(title = glue("Stacked {metric} by DGP - Plot {plot_id}"),
            yaxis = list(title = metric),
            xaxis = list(title = "Year"),
            showlegend = TRUE,

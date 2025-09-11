@@ -70,7 +70,7 @@ plot_totals_per_plot <- function(data = NULL,
                 line = list(width = 2, opacity = 0.8), hoverinfo = 'text',
                 text = ~paste('Plot:', PlotID, '<br>Year:', Year, '<br>BA:',
                               round(BA_total, 2), 'm2/ha')) %>%
-    layout(title = "Basal Area (BA) over time",
+    plotly::layout(title = "Basal Area (BA) over time",
            yaxis = list(title = "BA (m2/ha)"),
            xaxis = list(title = "Year"),
            showlegend = FALSE)
@@ -81,7 +81,7 @@ plot_totals_per_plot <- function(data = NULL,
                 line = list(width = 2, opacity = 0.8), hoverinfo = 'text',
                 text = ~paste('Plot:', PlotID, '<br>Year:', Year, '<br>N:',
                               round(N_total, 2), 'TPH')) %>%
-    layout(title = "Tree Density (N) over time",
+    plotly::layout(title = "Tree Density (N) over time",
            yaxis = list(title = "TPH"),
            xaxis = list(title = "Year"),
            showlegend = FALSE)

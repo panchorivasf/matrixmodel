@@ -92,7 +92,7 @@ ba_components_chart <- function(plot_id,
                    hoverinfo = 'text',
                    text = ~glue("Component: {component}<br>Year: {Year}<br>BA:
                                 {round(BA, 2)} m2/ha")) %>%
-    layout(title = glue("BA Components over Time: Plot {plot_id}"),
+    plotly::layout(title = glue("BA Components over Time: Plot {plot_id}"),
            yaxis = list(title = "Basal Area (m2/ha)"),
            xaxis = list(title = "Year"),
            barmode = 'stack',

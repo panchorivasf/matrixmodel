@@ -93,7 +93,7 @@ species_dgp_grid <- function(plot_id,
                                  {Year}<br>{metric}: {round(.data[[metric]],
                                  2)}"),
                     showscale = (year == years[1]))  %>%   # Only show colorbar for first plot
-        layout(xaxis = list(title = glue("DGP\nYear {year}")),
+        plotly::layout(xaxis = list(title = glue("DGP\nYear {year}")),
                yaxis = list(title = "Species Code"))
 
       heatmaps[[as.character(year)]] <- hm
@@ -102,7 +102,7 @@ species_dgp_grid <- function(plot_id,
 
   # Create subplot grid
   grid <- subplot(heatmaps, nrows = 1, shareY = TRUE, shareX = TRUE)  %>%
-    layout(title = glue("{metric} by Species x DGP: Plot {plot_id}"),
+    plotly::layout(title = glue("{metric} by Species x DGP: Plot {plot_id}"),
            showlegend = FALSE)
 
   if (save_html) {
