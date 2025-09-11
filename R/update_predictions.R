@@ -7,12 +7,13 @@
 #' @param DBH Diameter at breast height
 #'
 #' @returns A prediction
-#' @export
 #'
 #' @examples
 #' \dontrun{
 #' update_preductions(pred_vec, m, u, r, DBH)
 #' }
+#' @keywords internal
+#' @noRd
 update_predictions <- function(pred_vec, m, u, r, DBH) {
   req_m <- m$forest$independent.variable.names
   req_u <- u$forest$independent.variable.names
@@ -50,12 +51,13 @@ update_predictions <- function(pred_vec, m, u, r, DBH) {
 
   pred_vec <- pred_vec |>
     mutate(
-      BA_unit = pi * (DBH[DGP]^2) / 40000,
+      CurrDBH = DBH[pmin(DGP, length(DBH))],
+      BA_unit = pi * (CurrDBH^2) / 40000,
+      B_row   = TPH * BA_unit,
+      N_row   = TPH,
       rec_BA  = recruits * BA_unit,
       up_BA   = pmax(0, moved_up - TPH_1 * up) * BA_unit,
-      mort_BA = TPH_1 * mort * BA_unit,
-      PrevB   = sum(TPH * BA_unit, na.rm = TRUE),
-      PrevN   = TPH
+      mort_BA = TPH_1 * mort * BA_unit
     )
 
   pred_vec <- update_diversity(pred_vec)

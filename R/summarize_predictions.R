@@ -29,8 +29,6 @@
 #'     \item{mean_Simpson_SPCD}{Mean Simpson diversity index for species}
 #'   }
 #'
-#' @export
-#'
 #' @examples
 #' # Create example prediction data
 #' pred_data <- data.frame(
@@ -74,24 +72,23 @@
 #' variables represent totals, while diversity indices and heights represent
 #' true means.
 #'
-#' @seealso
-#' \code{\link{run_biomass_projection_memory}} for the main projection function
-#' that uses this summarization
+#' @keywords internal
+#' @noRd
 summarize_predictions <- function(df) {
   df |>
     group_by(PlotID, Year) |>
     summarise(
-      mean_B = sum(B, na.rm = TRUE),
-      mean_N = sum(N, na.rm = TRUE),
-      mean_rec_BA  = sum(ifelse(DGP == 1, rec_BA, 0), na.rm = TRUE),
-      mean_up_BA   = sum(up_BA,  na.rm = TRUE),
-      mean_mort_BA = sum(mort_BA,na.rm = TRUE),
-      mean_Hd = mean(Hd, na.rm = TRUE),
-      mean_Hs = mean(Hs, na.rm = TRUE),
-      mean_Shannon_DGP  = mean(Shannon_DGP, na.rm = TRUE),
-      mean_Simpson_DGP  = mean(Simpson_DGP, na.rm = TRUE),
-      mean_Shannon_SPCD = mean(Shannon_SPCD, na.rm = TRUE),
-      mean_Simpson_SPCD = mean(Simpson_SPCD, na.rm = TRUE),
+      BA_total       = sum(B, na.rm = TRUE),
+      N_total        = sum(N, na.rm = TRUE),
+      rec_BA_total   = sum(rec_BA,  na.rm = TRUE),
+      up_BA_total    = sum(up_BA,   na.rm = TRUE),
+      mort_BA_total  = sum(mort_BA, na.rm = TRUE),
+      Hd             = first(Hd),
+      Hs             = first(Hs),
+      Shannon_DGP    = first(Shannon_DGP),
+      Simpson_DGP    = first(Simpson_DGP),
+      Shannon_SPCD   = first(Shannon_SPCD),
+      Simpson_SPCD   = first(Simpson_SPCD),
       .groups = "drop"
     )
 }
