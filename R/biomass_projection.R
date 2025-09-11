@@ -59,8 +59,8 @@
 #' @importFrom dplyr coalesce bind_rows
 #' @importFrom tidyr pivot_longer
 #' @importFrom purrr map_dfr
-#' @importFrom ranger predict
-#' @importFrom doParallel registerDoParallel stopCluster
+#' @importFrom doParallel registerDoParallel
+#' @importFrom parallel stopCluster
 #' @importFrom foreach foreach %dopar%
 #' @importFrom parallel makeCluster detectCores
 #' @importFrom readr write_csv
