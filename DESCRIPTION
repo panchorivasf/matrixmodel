@@ -1,0 +1,16 @@
+Package: matrixmodel
+Type: Package
+Title: Runs the Matrix Model for Biomass 
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Francisco", "Rivas",
+      email = "frivasfu@purdue.edu",
+      role = c("aut", "cre")
+    )
+  )
+Description: Helper functions to prepare the data, computes the matrix model with random forest.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3
