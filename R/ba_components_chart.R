@@ -4,7 +4,8 @@
 #' (recruitment, upgrowth, mortality) over time for a specific plot.
 #'
 #' @param plot_id Character or numeric identifier for the plot to visualize
-#' @param data Either a data frame or character string specifying file path/pattern.
+#' @param data Either a data frame or character string specifying file
+#' path/pattern.
 #'   If character, uses `latest_file()` to find the most recent matching file.
 #' @param dir Character string specifying directory path to search for files
 #'   (only used if `data` is a character string).
@@ -19,7 +20,8 @@
 #' chart <- ba_components_chart(plot_id = "P1", data = summary_data)
 #'
 #' # From file path
-#' chart <- ba_components_chart(plot_id = "P1", data = "summary_results_data.csv")
+#' chart <- ba_components_chart(plot_id = "P1", data =
+#' "summary_results_data.csv")
 #'
 #' # From directory with pattern matching
 #' chart <- ba_components_chart(plot_id = "P1", dir = "output",
@@ -29,7 +31,7 @@
 #' @importFrom plotly plot_ly layout
 #' @importFrom readr read_csv
 #' @importFrom htmlwidgets saveWidget
-#' @importFrom dplyr filter select
+#' @importFrom dplyr filter select mutate case_when
 #' @importFrom tidyr pivot_longer
 #' @importFrom glue glue
 #' @export
@@ -49,11 +51,13 @@ ba_components_chart <- function(plot_id,
     file_path <- latest_file(dir, "summary_results__.*\\.csv")
     df <- read_csv(file_path, show_col_types = FALSE)
   } else {
-    stop("The 'data' parameter must be either a data frame or a character string")
+    stop("The 'data' parameter must be either a data frame or a
+         character string")
   }
 
   # Verify required columns exist
-  required_cols <- c("PlotID", "Year", "rec_BA_total", "up_BA_total", "mort_BA_total")
+  required_cols <- c("PlotID", "Year", "rec_BA_total", "up_BA_total",
+                     "mort_BA_total")
   missing_cols <- setdiff(required_cols, names(df))
   if (length(missing_cols) > 0) {
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
@@ -85,9 +89,10 @@ ba_components_chart <- function(plot_id,
                    color = ~component,
                    type = 'bar',
                    hoverinfo = 'text',
-                   text = ~glue("Component: {component}<br>Year: {Year}<br>BA: {round(BA, 2)} m²/ha")) %>%
-    layout(title = glue("BA Components over Time - Plot {plot_id}"),
-           yaxis = list(title = "Basal Area (m²/ha)"),
+                   text = ~glue("Component: {component}<br>Year: {Year}<br>BA:
+                                {round(BA, 2)} m2/ha")) |>
+    layout(title = glue("BA Components over Time: Plot {plot_id}"),
+           yaxis = list(title = "Basal Area (m2/ha)"),
            xaxis = list(title = "Year"),
            barmode = 'stack',
            showlegend = TRUE,

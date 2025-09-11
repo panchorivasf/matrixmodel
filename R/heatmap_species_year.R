@@ -87,7 +87,7 @@ heatmap_species_year <- function(plot_id,
                 hoverinfo = "text",
                 text = ~glue("Species: {SPCD}<br>Year: {Year}<br>{metric}:
                              {round(.data[[metric]], 2)}")) |>
-    layout(title = glue("Heatmap of {metric}: Species × Year - Plot {plot_id}"),
+    layout(title = glue("Heatmap of {metric}: Species × Year: Plot {plot_id}"),
            xaxis = list(title = "Year"),
            yaxis = list(title = "Species Code"),
            colorbar = list(title = metric))

@@ -55,7 +55,8 @@ species_dgp_grid <- function(plot_id,
     file_path <- latest_file(dir, "plot_spcd_dgp_year_.*\\.csv")
     df <- read_csv(file_path, show_col_types = FALSE)
   } else {
-    stop("The 'data' parameter must be either a data frame or a character string")
+    stop("The 'data' parameter must be either a data frame or a
+         character string")
   }
 
   # Verify required columns exist
@@ -87,8 +88,10 @@ species_dgp_grid <- function(plot_id,
                     colors = "Viridis",
                     colorbar = list(title = metric),
                     hoverinfo = "text",
-                    text = ~glue("Species: {SPCD}<br>DGP: {DGP}<br>Year: {Year}<br>{metric}: {round(.data[[metric]], 2)}"),
-                    showscale = (year == years[1])) %>%  # Only show colorbar for first plot
+                    text = ~glue("Species: {SPCD}<br>DGP: {DGP}<br>Year:
+                                 {Year}<br>{metric}: {round(.data[[metric]],
+                                 2)}"),
+                    showscale = (year == years[1]))  |>   # Only show colorbar for first plot
         layout(xaxis = list(title = glue("DGP\nYear {year}")),
                yaxis = list(title = "Species Code"))
 
@@ -97,8 +100,8 @@ species_dgp_grid <- function(plot_id,
   }
 
   # Create subplot grid
-  grid <- subplot(heatmaps, nrows = 1, shareY = TRUE, shareX = TRUE) %>%
-    layout(title = glue("{metric} by Species × DGP - Plot {plot_id}"),
+  grid <- subplot(heatmaps, nrows = 1, shareY = TRUE, shareX = TRUE)  |>
+    layout(title = glue("{metric} by Species × DGP: Plot {plot_id}"),
            showlegend = FALSE)
 
   if (save_html) {
