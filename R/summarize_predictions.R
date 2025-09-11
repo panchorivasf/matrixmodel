@@ -78,11 +78,11 @@ summarize_predictions <- function(df) {
   df |>
     group_by(PlotID, Year) |>
     summarise(
-      BA_total       = sum(B, na.rm = TRUE),
-      N_total        = sum(N, na.rm = TRUE),
-      rec_BA_total   = sum(rec_BA,  na.rm = TRUE),
-      up_BA_total    = sum(up_BA,   na.rm = TRUE),
-      mort_BA_total  = sum(mort_BA, na.rm = TRUE),
+      BA_total       = mean(B, na.rm = TRUE),
+      N_total        = mean(N, na.rm = TRUE),
+      rec_BA_total   = mean(rec_BA,  na.rm = TRUE),
+      up_BA_total    = mean(up_BA,   na.rm = TRUE),
+      mort_BA_total  = mean(mort_BA, na.rm = TRUE),
       Hd             = first(Hd),
       Hs             = first(Hs),
       Shannon_DGP    = first(Shannon_DGP),

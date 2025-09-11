@@ -77,6 +77,8 @@ biomass_projection <- function(output_dir = NULL,
                                dbh_ref = NULL,
                                years = 50) {
 
+  if(is.null())
+
   # Load required packages
   require(tidyverse)
   require(ranger)
@@ -489,3 +491,4 @@ biomass_projection <- function(output_dir = NULL,
   cat("All outputs written to:", summary_output, "\n")
   return(summary_output)
 }
+
