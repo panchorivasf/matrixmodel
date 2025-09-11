@@ -4,7 +4,7 @@
 #' for output storage. This function selects relevant columns, renames biomass and
 #' tree count variables for consistency, and adds the simulation year identifier.
 #'
-#' @name extract_outputs
+#' @name extract_prediction_year
 #'
 #' @param pred_vec A data frame containing model predictions with the following
 #'   required columns: 'PlotID', 'PrevB' (previous/current biomass), 'PrevN'
@@ -62,13 +62,13 @@
 #' )
 #'
 #' # Extract outputs for year 5
-#' year5_output <- extract_outputs(pred_data, sim_year = 5)
+#' year5_output <- extract_prediction_year(pred_data, sim_year = 5)
 #'
 #' # View results
 #' print(year5_output)
 #'
 #' # Extract outputs for year 0 (initial conditions)
-#' initial_output <- extract_outputs(pred_data, sim_year = 0)
+#' initial_output <- extract_prediction_year(pred_data, sim_year = 0)
 #'
 #' @details
 #' This function serves as a standardization step in the forest projection workflow:
@@ -86,7 +86,7 @@
 #' @seealso
 #' \code{\link{run_biomass_projection_memory}} for the main projection function,
 #' \code{\link{summarize_predictions}} for summarizing extracted outputs
-extract_outputs <- function(pred_vec, sim_year) {
+extract_prediction_year <- function(pred_vec, sim_year) {
   pred_vec |>
     select(PlotID, PrevB, PrevN, DGP, SPCD, TPH,
            rec_BA, up_BA, mort_BA,
