@@ -8,7 +8,7 @@
 #' @param data Either a data frame or character string specifying file
 #' path/pattern.
 #'   If character, uses `latest_file()` to find the most recent matching file.
-#' @param dir Character string specifying directory path to search for files
+#' @param save_to Character string specifying directory path to search for files
 #'   (only used if `data` is a character string).
 #' @param metric Character string specifying the metric to plot: "BA_total"
 #'  (basal area)
@@ -28,7 +28,7 @@
 #' "plot_species_year_data.csv")
 #'
 #' # From directory with pattern matching
-#' hm <- heatmap_species_year_interactive(plot_id = "P1", dir = "output",
+#' hm <- heatmap_species_year_interactive(plot_id = "P1", save_to = "output",
 #'                                       data = "plot_species_year_.*\\.csv")
 #' }
 #'
@@ -41,35 +41,48 @@
 #' @export
 heatmap_species_year <- function(plot_id,
                                  data = NULL,
-                                 dir = out_dir,
+                                 save_to = NULL,
                                  metric = c("BA_total", "N_total"),
                                  save_html = FALSE) {
 
   metric <- match.arg(metric)
 
   # Handle data input: either data frame or file path
-  if (is.data.frame(data)) {
+  if (is.null(data)) {
+    stop("'data' must be either a data frame or the name of a csv file
+       in the working directory. If the file is not in the working
+       directory, provide the full path.")
+  } else if (is.data.frame(data)) {
     df <- data
   } else if (is.character(data)) {
-    # If data is provided as character, use it as file pattern/path
-    file_pattern <- if (!is.null(data)) data else "plot_species_year_.*\\.csv"
-    file_path <- latest_file(dir, file_pattern)
-    df <- read_csv(file_path, show_col_types = FALSE)
-  } else if (is.null(data)) {
-    # Default behavior: use latest file in directory
-    file_path <- latest_file(dir, "plot_species_year_.*\\.csv")
-    df <- read_csv(file_path, show_col_types = FALSE)
+    if (length(data) != 1) {
+      stop("File path must be a single character string")
+    }
+    df <- read_csv(data, show_col_types = FALSE)
   } else {
-    stop("The 'data' parameter must be either a data frame or a character
-         string")
+    stop("'data' must be either a data frame or a character string (file path), not ",
+         class(data)[1])
   }
 
+
+  df <- df |>
+    group_by(PlotID, SPCD, SpeciesGroup, Year) |>
+    summarise(
+      BA_total     = sum(B, na.rm = TRUE),
+      N_total      = sum(N, na.rm = TRUE),
+      rec_BA_total = sum(rec_BA,  na.rm = TRUE),
+      up_BA_total  = sum(up_BA,   na.rm = TRUE),
+      mort_BA_total= sum(mort_BA, na.rm = TRUE),
+      .groups = "drop"
+    )
+
   # Verify required columns exist
-  required_cols <- c("PlotID", "Year", "Species Group", metric)
+  required_cols <- c("PlotID", "Year", "SpeciesGroup", metric)
   missing_cols <- setdiff(required_cols, names(df))
   if (length(missing_cols) > 0) {
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
   }
+
 
   # Filter for the specified plot
   df_plot <- df %>% filter(PlotID == plot_id)
@@ -84,7 +97,7 @@ heatmap_species_year <- function(plot_id,
                 y = ~factor(SpeciesGroup),
                 z = ~.data[[metric]],
                 type = "heatmap",
-                colors = "Viridis",
+                colors = "viridis",
                 hoverinfo = "text",
                 text = ~glue("Species Group: {SpeciesGroup}<br>Year: {Year}<br>{metric}:
                              {round(.data[[metric]], 2)}")) %>%
@@ -94,11 +107,12 @@ heatmap_species_year <- function(plot_id,
            colorbar = list(title = metric))
 
   if (save_html) {
-    if (!is.null(dir)) {
+    if (!is.null(save_to)) {
       filename <- glue("interactive_heatmap_{metric}_plot_{plot_id}.html")
-      saveWidget(hm, file.path(dir, filename))
+      saveWidget(hm, file.path(save_to, filename))
     } else {
-      warning("Cannot save HTML file: no directory specified")
+      filename <- glue("interactive_heatmap_{metric}_plot_{plot_id}.html")
+      saveWidget(hm, file.path(getwd(), filename))
     }
   }
 

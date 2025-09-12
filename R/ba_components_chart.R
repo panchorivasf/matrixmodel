@@ -38,23 +38,35 @@
 #' @export
 ba_components_chart <- function(plot_id,
                                 data = NULL,
-                                dir = out_dir,
+                                dir = NULL,
                                 save_html = FALSE) {
 
-  # Handle data input: either data frame or file path
-  if (is.data.frame(data)) {
+  if (is.null(data)) {
+    stop("'data' must be either a data frame or the name of a csv file
+       in the working directory. If the file is not in the working
+       directory, provide the full path.")
+  } else if (is.data.frame(data)) {
     df <- data
   } else if (is.character(data)) {
-    file_pattern <- if (!is.null(data)) data else "summary_results__.*\\.csv"
-    file_path <- latest_file(dir, file_pattern)
-    df <- read_csv(file_path, show_col_types = FALSE)
-  } else if (is.null(data)) {
-    file_path <- latest_file(dir, "summary_results__.*\\.csv")
-    df <- read_csv(file_path, show_col_types = FALSE)
+    if (length(data) != 1) {
+      stop("File path must be a single character string")
+    }
+    df <- read_csv(data, show_col_types = FALSE)
   } else {
-    stop("The 'data' parameter must be either a data frame or a
-         character string")
+    stop("'data' must be either a data frame or a character string (file path), not ",
+         class(data)[1])
   }
+
+  df <- df |>
+    group_by(PlotID, SPCD, SpeciesGroup, DGP, Year) |>
+    summarise(
+      BA_total     = sum(B, na.rm = TRUE),
+      N_total      = sum(N, na.rm = TRUE),
+      rec_BA_total = sum(rec_BA,  na.rm = TRUE),
+      up_BA_total  = sum(up_BA,   na.rm = TRUE),
+      mort_BA_total= sum(mort_BA, na.rm = TRUE),
+      .groups = "drop"
+    )
 
   # Verify required columns exist
   required_cols <- c("PlotID", "Year", "rec_BA_total", "up_BA_total",

@@ -325,20 +325,20 @@ biomass_projection <- function(output_dir = NULL,
             file.path(summary_output, "species_year.csv"),
             row.names = FALSE)
 
-  plot_species_year <- all_preds |>
-    group_by(PlotID, SPCD, SpeciesGroup, Year) |>
-    summarise(
-      BA_total     = sum(B, na.rm = TRUE),
-      N_total      = sum(N, na.rm = TRUE),
-      rec_BA_total = sum(rec_BA,  na.rm = TRUE),
-      up_BA_total  = sum(up_BA,   na.rm = TRUE),
-      mort_BA_total= sum(mort_BA, na.rm = TRUE),
-      .groups = "drop"
-    )
+  # plot_species_year <- all_preds |>
+  #   group_by(PlotID, SPCD, SpeciesGroup, Year) |>
+  #   summarise(
+  #     BA_total     = sum(B, na.rm = TRUE),
+  #     N_total      = sum(N, na.rm = TRUE),
+  #     rec_BA_total = sum(rec_BA,  na.rm = TRUE),
+  #     up_BA_total  = sum(up_BA,   na.rm = TRUE),
+  #     mort_BA_total= sum(mort_BA, na.rm = TRUE),
+  #     .groups = "drop"
+  #   )
 
-  write.csv(plot_species_year,
-            file.path(summary_output, "plot_species_year.csv"),
-            row.names = FALSE)
+  # write.csv(plot_species_year,
+  #           file.path(summary_output, "plot_species_year.csv"),
+  #           row.names = FALSE)
 
   dgp_year <- all_preds |>
     group_by(DGP, Year) |>
@@ -354,35 +354,35 @@ biomass_projection <- function(output_dir = NULL,
   write.csv(dgp_year, file.path(summary_output, "dgp_year.csv"),
             row.names = FALSE)
 
-  plot_dgp_year <- all_preds |>
-    group_by(PlotID, DGP, SpeciesGroup, Year) |>
-    summarise(
-      BA_total     = sum(B, na.rm = TRUE),
-      N_total      = sum(N, na.rm = TRUE),
-      rec_BA_total = sum(rec_BA,  na.rm = TRUE),
-      up_BA_total  = sum(up_BA,   na.rm = TRUE),
-      mort_BA_total= sum(mort_BA, na.rm = TRUE),
-      .groups = "drop"
-    )
+  # plot_dgp_year <- all_preds |>
+  #   group_by(PlotID, DGP, SpeciesGroup, Year) |>
+  #   summarise(
+  #     BA_total     = sum(B, na.rm = TRUE),
+  #     N_total      = sum(N, na.rm = TRUE),
+  #     rec_BA_total = sum(rec_BA,  na.rm = TRUE),
+  #     up_BA_total  = sum(up_BA,   na.rm = TRUE),
+  #     mort_BA_total= sum(mort_BA, na.rm = TRUE),
+  #     .groups = "drop"
+  #   )
 
-  write.csv(plot_dgp_year,
-            file.path(summary_output, "plot_dgp_year.csv"),
-            row.names = FALSE)
+  # write.csv(plot_dgp_year,
+  #           file.path(summary_output, "plot_dgp_year.csv"),
+  #           row.names = FALSE)
 
-  plot_spcd_dgp_year <- all_preds |>
-    group_by(PlotID, SPCD, SpeciesGroup, DGP, Year) |>
-    summarise(
-      BA_total     = sum(B, na.rm = TRUE),
-      N_total      = sum(N, na.rm = TRUE),
-      rec_BA_total = sum(rec_BA,  na.rm = TRUE),
-      up_BA_total  = sum(up_BA,   na.rm = TRUE),
-      mort_BA_total= sum(mort_BA, na.rm = TRUE),
-      .groups = "drop"
-    )
-
-  write.csv(plot_spcd_dgp_year,
-            file.path(summary_output, "plot_spcd_dgp_year.csv"),
-            row.names = FALSE)
+  # plot_spcd_dgp_year <- all_preds |>
+  #   group_by(PlotID, SPCD, SpeciesGroup, DGP, Year) |>
+  #   summarise(
+  #     BA_total     = sum(B, na.rm = TRUE),
+  #     N_total      = sum(N, na.rm = TRUE),
+  #     rec_BA_total = sum(rec_BA,  na.rm = TRUE),
+  #     up_BA_total  = sum(up_BA,   na.rm = TRUE),
+  #     mort_BA_total= sum(mort_BA, na.rm = TRUE),
+  #     .groups = "drop"
+  #   )
+  #
+  # write.csv(plot_spcd_dgp_year,
+  #           file.path(summary_output, "plot_spcd_dgp_year.csv"),
+  #           row.names = FALSE)
 
   cat("All outputs written to:", summary_output, "\n")
 }

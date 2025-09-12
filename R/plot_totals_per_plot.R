@@ -7,7 +7,7 @@
 #' @param data Either a data frame or character string specifying file
 #' path/pattern.
 #'   If character, uses `latest_file()` to find the most recent matching file.
-#' @param dir Character string specifying directory path to search for files
+#' @param save_to Character string specifying directory path to search for files
 #'   (only used if `data` is a character string).
 #' @param save_html Logical indicating whether to save interactive HTML plots.
 #'   Defaults to FALSE.
@@ -27,7 +27,7 @@
 #' plots <- plot_totals_per_plot_interactive(my_dataframe)
 #'
 #' # From directory with pattern matching
-#' plots <- plot_totals_per_plot_interactive(dir = "output",
+#' plots <- plot_totals_per_plot_interactive(save_to = "output",
 #'                                          data = "summary_results__.*\\.csv")
 #' }
 #'
@@ -37,24 +37,24 @@
 #' @importFrom htmlwidgets saveWidget
 #' @export
 plot_totals_per_plot <- function(data = NULL,
-                                 dir = out_dir,
+                                 save_to = NULL,
                                  save_html = FALSE) {
 
   # Handle data input: either data frame or file path
-  if (is.data.frame(data)) {
+  if (is.null(data)) {
+    stop("'data' must be either a data frame or the name of a csv file
+       in the working directory. If the file is not in the working
+       directory, provide the full path.")
+  } else if (is.data.frame(data)) {
     df <- data
   } else if (is.character(data)) {
-    # If data is provided as character, use it as file pattern/path
-    file <- if (!is.null(data)) data else "summary_results__.*\\.csv"
-    file_path <- latest_file(dir, file)
-    df <- read_csv(file_path, show_col_types = FALSE)
-  } else if (is.null(data)) {
-    # Default behavior: use latest file in directory
-    file_path <- latest_file(dir, "summary_results__.*\\.csv")
-    df <- read_csv(file_path, show_col_types = FALSE)
+    if (length(data) != 1) {
+      stop("File path must be a single character string")
+    }
+    df <- read_csv(data, show_col_types = FALSE)
   } else {
-    stop("The 'data' parameter must be either a data frame or a character
-         string")
+    stop("'data' must be either a data frame or a character string (file path), not ",
+         class(data)[1])
   }
 
   # Verify required columns exist
@@ -87,12 +87,13 @@ plot_totals_per_plot <- function(data = NULL,
            showlegend = FALSE)
 
   if (save_html) {
-    if (!is.null(dir)) {
-      saveWidget(p1, file.path(dir, "interactive_BA_total.html"))
-      saveWidget(p2, file.path(dir, "interactive_N_total.html"))
+    if (!is.null(save_to)) {
+      saveWidget(p1, file.path(save_to, "interactive_BA_total.html"))
+      saveWidget(p2, file.path(save_to, "interactive_N_total.html"))
     } else {
-      warning("Cannot save HTML files: no directory specified")
-    }
+      cat(paste("Saving plots in", getwd()))
+      saveWidget(p1, file.path(getwd(), "interactive_BA_total.html"))
+      saveWidget(p2, file.path(getwd(), "interactive_N_total.html"))    }
   }
 
   list(ba = p1, n = p2)

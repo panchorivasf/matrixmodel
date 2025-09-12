@@ -7,7 +7,7 @@
 #' @param years Numeric vector of years to include in the faceted grid
 #' @param data Either a data frame or character string specifying file path/pattern.
 #'   If character, uses `latest_file()` to find the most recent matching file.
-#' @param dir Character string specifying directory path to search for files
+#' @param save_to Character string specifying directory path to search for files
 #'   (only used if `data` is a character string).
 #' @param metric Character string specifying the metric to plot: "BA_total" (basal area)
 #'   or "N_total" (tree density). Defaults to "BA_total".
@@ -25,7 +25,7 @@
 #' grid <- species_dgp_grid(plot_id = "P1", data = "plot_spcd_dgp_year_data.csv")
 #'
 #' # From directory with pattern matching
-#' grid <- species_dgp_grid(plot_id = "P1", dir = "output",
+#' grid <- species_dgp_grid(plot_id = "P1", save_to = "output",
 #'                         data = "plot_spcd_dgp_year_.*\\.csv")
 #' }
 #'
@@ -39,26 +39,39 @@
 species_dgp_grid <- function(plot_id,
                              years = 50,
                              data = NULL,
-                             dir = out_dir,
+                             save_to = out_dir,
                              metric = c("BA_total", "N_total"),
                              save_html = FALSE) {
 
   metric <- match.arg(metric)
 
   # Handle data input: either data frame or file path
-  if (is.data.frame(data)) {
+  if (is.null(data)) {
+    stop("'data' must be either a data frame or the name of a csv file
+       in the working directory. If the file is not in the working
+       directory, provide the full path.")
+  } else if (is.data.frame(data)) {
     df <- data
   } else if (is.character(data)) {
-    file_pattern <- if (!is.null(data)) data else "plot_spcd_dgp_year_.*\\.csv"
-    file_path <- latest_file(dir, file_pattern)
-    df <- read_csv(file_path, show_col_types = FALSE)
-  } else if (is.null(data)) {
-    file_path <- latest_file(dir, "plot_spcd_dgp_year_.*\\.csv")
-    df <- read_csv(file_path, show_col_types = FALSE)
+    if (length(data) != 1) {
+      stop("File path must be a single character string")
+    }
+    df <- read_csv(data, show_col_types = FALSE)
   } else {
-    stop("The 'data' parameter must be either a data frame or a
-         character string")
+    stop("'data' must be either a data frame or a character string (file path), not ",
+         class(data)[1])
   }
+
+  df <- df |>
+    group_by(PlotID, SPCD, SpeciesGroup, DGP, Year) |>
+    summarise(
+      BA_total     = sum(B, na.rm = TRUE),
+      N_total      = sum(N, na.rm = TRUE),
+      rec_BA_total = sum(rec_BA,  na.rm = TRUE),
+      up_BA_total  = sum(up_BA,   na.rm = TRUE),
+      mort_BA_total= sum(mort_BA, na.rm = TRUE),
+      .groups = "drop"
+    )
 
   # Verify required columns exist
   required_cols <- c("PlotID", "Year", "SpeciesGroup", "DGP", metric)
@@ -106,12 +119,12 @@ species_dgp_grid <- function(plot_id,
            showlegend = FALSE)
 
   if (save_html) {
-    if (!is.null(dir)) {
+    if (!is.null(save_to)) {
       filename <- glue("interactive_{metric}_speciesDGP_grid_plot_{plot_id}.html")
-      saveWidget(grid, file.path(dir, filename))
+      saveWidget(grid, file.path(save_to, filename))
     } else {
-      warning("Cannot save HTML file: no directory specified")
-    }
+      filename <- glue("interactive_{metric}_speciesDGP_grid_plot_{plot_id}.html")
+      saveWidget(grid, file.path(getwd(), filename))    }
   }
 
   grid
