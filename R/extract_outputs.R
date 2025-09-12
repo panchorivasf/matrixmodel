@@ -85,9 +85,11 @@
 #' @noRd
 extract_outputs <- function(pred_vec, sim_year) {
   pred_vec |>
-    select(PlotID, PrevB, PrevN, DGP, SPCD, TPH,
+    select(PlotID, PrevB, PrevN, DGP, SPCD, SpeciesGroup, TPH,
            rec_BA, up_BA, mort_BA,
-           Hd, Hs, Shannon_DGP, Simpson_DGP, Shannon_SPCD, Simpson_SPCD) |>
+           Hd, Hs
+           # Shannon_DGP, Simpson_DGP, Shannon_SPCD, Simpson_SPCD
+           ) |>
     rename(B = PrevB, N = PrevN) |>
     mutate(Year = sim_year)
 }
