@@ -7,7 +7,7 @@
 #' @param data Either a data frame or character string specifying file
 #' path/pattern.
 #'   If character, uses `latest_file()` to find the most recent matching file.
-#' @param save_to Character string specifying directory path to search for files
+#' @param dir Character string specifying directory path to search for files
 #'   (only used if `data` is a character string).
 #' @param save_html Logical indicating whether to save interactive HTML plots.
 #'   Defaults to FALSE.
@@ -27,7 +27,7 @@
 #' plots <- plot_totals_per_plot_interactive(my_dataframe)
 #'
 #' # From directory with pattern matching
-#' plots <- plot_totals_per_plot_interactive(save_to = "output",
+#' plots <- plot_totals_per_plot_interactive(dir = "output",
 #'                                          data = "summary_results__.*\\.csv")
 #' }
 #'
@@ -37,7 +37,7 @@
 #' @importFrom htmlwidgets saveWidget
 #' @export
 plot_totals_per_plot <- function(data = NULL,
-                                 save_to = NULL,
+                                 dir = NULL,
                                  save_html = FALSE) {
 
   # Handle data input: either data frame or file path
@@ -87,13 +87,12 @@ plot_totals_per_plot <- function(data = NULL,
            showlegend = FALSE)
 
   if (save_html) {
-    if (!is.null(save_to)) {
-      saveWidget(p1, file.path(save_to, "interactive_BA_total.html"))
-      saveWidget(p2, file.path(save_to, "interactive_N_total.html"))
+    if (!is.null(dir)) {
+      saveWidget(p1, file.path(dir, "interactive_BA_total.html"))
+      saveWidget(p2, file.path(dir, "interactive_N_total.html"))
     } else {
-      cat(paste("Saving plots in", getwd()))
-      saveWidget(p1, file.path(getwd(), "interactive_BA_total.html"))
-      saveWidget(p2, file.path(getwd(), "interactive_N_total.html"))    }
+      warning("Cannot save HTML files: no directory specified")
+    }
   }
 
   list(ba = p1, n = p2)

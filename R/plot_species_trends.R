@@ -22,7 +22,8 @@
 #' p <- plot_species_trends(plot_id = "P1", data = species_data)
 #'
 #' # From file path
-#' p <- plot_species_trends(plot_id = "P1", data = "plot_species_year_data.csv")
+#' p <- plot_species_trends(plot_id = "P1",
+#' data = "plot_species_year_data.csv")
 #'
 #' # From directory with pattern matching
 #' p <- plot_species_trends(plot_id = "P1", save_to = "output",

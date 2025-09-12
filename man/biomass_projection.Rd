@@ -6,9 +6,9 @@
 models}
 \usage{
 biomass_projection(
-  output_dir = NULL,
+  save_to = NULL,
   cores = -1,
-  plot_data = NULL,
+  data = NULL,
   plot_id = NULL,
   dbh_ref = NULL,
   years = 50,
@@ -18,13 +18,13 @@ biomass_projection(
 )
 }
 \arguments{
-\item{output_dir}{Directory where output files will be saved. Defaults to
+\item{save_to}{Directory where output files will be saved. Defaults to
 current working directory if NULL.}
 
 \item{cores}{Number of CPU cores to use for parallel processing. Use -1 to
 use all available cores minus one.}
 
-\item{plot_data}{Data frame containing plot data with species and diameter
+\item{data}{Data frame containing plot data with species and diameter
 group information.}
 
 \item{plot_id}{Optional specific plot ID to process. If NULL, processes all
@@ -67,7 +67,7 @@ The function creates a "model_output" directory containing:
 \dontrun{
 # Process a single plot
 result <- biomass_projection(
-  plot_data = data,
+  data = data,
   plot_id = "49628170910",
   dbh_ref = db_ref,
   years = 5
@@ -75,7 +75,7 @@ result <- biomass_projection(
 
 # Process all plots in parallel
 result <- biomass_projection(
-  plot_data = data,
+  data = data,
   dbh_ref = db_ref,
   cores = 4,
   years = 10
