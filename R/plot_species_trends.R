@@ -62,7 +62,7 @@ plot_species_trends <- function(plot_id,
   }
 
   # Verify required columns exist
-  required_cols <- c("PlotID", "Year", "SPCD", metric)
+  required_cols <- c("PlotID", "Year", "SpeciesGroup", metric)
   missing_cols <- setdiff(required_cols, names(df))
   if (length(missing_cols) > 0) {
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
@@ -77,19 +77,19 @@ plot_species_trends <- function(plot_id,
 
   # Keep top-N species over whole timeline (by total contribution)
   top_sp <- df_plot %>%
-    group_by(SPCD) %>%
+    group_by(SpeciesGroup) %>%
     summarise(tot = sum(.data[[metric]], na.rm = TRUE), .groups = "drop") %>%
     arrange(desc(tot)) %>%
     slice_head(n = top_n) %>%
-    pull(SPCD)
+    pull(SpeciesGroup)
 
-  dplot <- df_plot %>% filter(SPCD %in% top_sp)
+  dplot <- df_plot %>% filter(SpeciesGroup %in% top_sp)
 
   # Create interactive plot
-  p <- plot_ly(dplot, x = ~Year, y = ~.data[[metric]], color = ~factor(SPCD),
+  p <- plot_ly(dplot, x = ~Year, y = ~.data[[metric]], color = ~factor(SpeciesGroup),
                type = 'scatter', mode = 'lines',
                line = list(width = 2), hoverinfo = 'text',
-               text = ~glue("Species: {SPCD}<br>Year: {Year}<br>{metric}: {round(.data[[metric]], 2)}")) %>%
+               text = ~glue("Species: {SpeciesGroup}<br>Year: {Year}<br>{metric}: {round(.data[[metric]], 2)}")) %>%
     plotly::layout(title = glue("{metric} by Species across Years: Plot {plot_id}"),
            yaxis = list(title = metric),
            xaxis = list(title = "Year"),

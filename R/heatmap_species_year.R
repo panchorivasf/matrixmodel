@@ -65,7 +65,7 @@ heatmap_species_year <- function(plot_id,
   }
 
   # Verify required columns exist
-  required_cols <- c("PlotID", "Year", "SPCD", metric)
+  required_cols <- c("PlotID", "Year", "Species Group", metric)
   missing_cols <- setdiff(required_cols, names(df))
   if (length(missing_cols) > 0) {
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
@@ -81,16 +81,16 @@ heatmap_species_year <- function(plot_id,
   # Create interactive heatmap
   hm <- plot_ly(df_plot,
                 x = ~Year,
-                y = ~factor(SPCD),
+                y = ~factor(SpeciesGroup),
                 z = ~.data[[metric]],
                 type = "heatmap",
                 colors = "Viridis",
                 hoverinfo = "text",
-                text = ~glue("Species: {SPCD}<br>Year: {Year}<br>{metric}:
+                text = ~glue("Species Group: {SpeciesGroup}<br>Year: {Year}<br>{metric}:
                              {round(.data[[metric]], 2)}")) %>%
-    plotly::layout(title = glue("Heatmap of {metric}: Species x Year: Plot {plot_id}"),
+    plotly::layout(title = glue("Heatmap of {metric}: Species Group x Year: Plot {plot_id}"),
            xaxis = list(title = "Year"),
-           yaxis = list(title = "Species Code"),
+           yaxis = list(title = "Species Group"),
            colorbar = list(title = metric))
 
   if (save_html) {

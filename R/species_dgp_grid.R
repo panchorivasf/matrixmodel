@@ -61,7 +61,7 @@ species_dgp_grid <- function(plot_id,
   }
 
   # Verify required columns exist
-  required_cols <- c("PlotID", "Year", "SPCD", "DGP", metric)
+  required_cols <- c("PlotID", "Year", "SpeciesGroup", "DGP", metric)
   missing_cols <- setdiff(required_cols, names(df))
   if (length(missing_cols) > 0) {
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
@@ -83,18 +83,18 @@ species_dgp_grid <- function(plot_id,
     if (nrow(year_data) > 0) {
       hm <- plot_ly(year_data,
                     x = ~factor(DGP),
-                    y = ~factor(SPCD),
+                    y = ~factor(SpeciesGroup),
                     z = ~.data[[metric]],
                     type = "heatmap",
                     colors = "Viridis",
                     colorbar = list(title = metric),
                     hoverinfo = "text",
-                    text = ~glue("Species: {SPCD}<br>DGP: {DGP}<br>Year:
+                    text = ~glue("Species Group: {SpeciesGroup}<br>DGP: {DGP}<br>Year:
                                  {Year}<br>{metric}: {round(.data[[metric]],
                                  2)}"),
                     showscale = (year == years[1]))  %>%   # Only show colorbar for first plot
         plotly::layout(xaxis = list(title = glue("DGP\nYear {year}")),
-               yaxis = list(title = "Species Code"))
+               yaxis = list(title = "Species Group"))
 
       heatmaps[[as.character(year)]] <- hm
     }
@@ -102,7 +102,7 @@ species_dgp_grid <- function(plot_id,
 
   # Create subplot grid
   grid <- subplot(heatmaps, nrows = 1, shareY = TRUE, shareX = TRUE)  %>%
-    plotly::layout(title = glue("{metric} by Species x DGP: Plot {plot_id}"),
+    plotly::layout(title = glue("{metric} by Species Group x DGP: Plot {plot_id}"),
            showlegend = FALSE)
 
   if (save_html) {

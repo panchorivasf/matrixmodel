@@ -77,14 +77,6 @@ biomass_projection <- function(output_dir = NULL,
                                dbh_ref = NULL,
                                years = 50) {
 
-  if(is.null())
-
-  # Load required packages
-  require(tidyverse)
-  require(ranger)
-  require(doParallel)
-  require(foreach)
-  require(purrr)
 
   if(is.null(output_dir)){
     output_dir <- getwd()
@@ -110,10 +102,22 @@ biomass_projection <- function(output_dir = NULL,
   # ---- Inputs ----
   t1 <- plot_data
 
-  # (optional) single plot filter
   if (!is.null(plot_id)){
+    # Input validation
+    if (!all(plot_id %in% t1$PlotID)) {
+      missing_ids <- setdiff(plot_id, t1$PlotID)
+      warning("Some plot_ids not found in plot_data: ", paste(missing_ids, collapse = ", "))
+    }
+
+    original_count <- nrow(t1)
     t1 <- t1  |>
-      dplyr::filter(PlotID == plot_id)
+      dplyr::filter(PlotID %in% plot_id)
+
+    if (nrow(t1) == 0) {
+      stop("No plots found with the specified plot_id(s): ", paste(plot_id, collapse = ", "))
+    }
+
+    cat("Filtered to", nrow(t1), "plot(s) out of", original_count, "total\n")
   }
 
   m <- readRDS(m_model)
@@ -135,7 +139,7 @@ biomass_projection <- function(output_dir = NULL,
   all_dbh_vec <- ref$DBH_all
   drc_dbh_vec <- ref$DBH
 
-  # ---- Helpers ----
+  # # ---- Helpers ----
   # update_diversity <- function(pred_vec) {
   #   dgp_div <- pred_vec |>
   #     group_by(PlotID, DGP) |>
@@ -161,12 +165,11 @@ biomass_projection <- function(output_dir = NULL,
   #     select(PlotID, Shannon_SPCD, Simpson_SPCD) |> distinct()
   #
   #   pred_vec |>
-  #     select(-any_of(c("Shannon_DGP","Simpson_DGP",
-  #                      "Shannon_SPCD","Simpson_SPCD"))) |>
+  #     select(-any_of(c("Shannon_DGP","Simpson_DGP","Shannon_SPCD","Simpson_SPCD"))) |>
   #     left_join(dgp_div, by = "PlotID") |>
   #     left_join(spcd_div, by = "PlotID")
   # }
-
+  #
   # prepare_pred_vector <- function(plt_vec, DBH) {
   #   pred_vec <- plt_vec |>
   #     pivot_longer(cols = matches("^S\\d{2}_D\\d{2}$"),
@@ -189,7 +192,7 @@ biomass_projection <- function(output_dir = NULL,
   #   pred_vec$Year <- 0L
   #   pred_vec
   # }
-
+  #
   # update_predictions <- function(pred_vec, m, u, r, DBH) {
   #   req_m <- m$forest$independent.variable.names
   #   req_u <- u$forest$independent.variable.names
@@ -197,12 +200,9 @@ biomass_projection <- function(output_dir = NULL,
   #
   #   pred_vec <- pred_vec |> mutate(TPH_1 = TPH)
   #
-  #   mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)),
-  #                                          drop = FALSE])$predictions)
-  #   up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)),
-  #                                          drop = FALSE])$predictions) / 5
-  #   rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)),
-  #                                          drop = FALSE])$predictions)
+  #   mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)), drop = FALSE])$predictions)
+  #   up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)), drop = FALSE])$predictions) / 5
+  #   rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)), drop = FALSE])$predictions)
   #
   #   up[is.na(up) | up < 0 | pred_vec$DGP >= 20] <- 0
   #   mort[is.na(mort) | mort < 0] <- 0
@@ -239,18 +239,39 @@ biomass_projection <- function(output_dir = NULL,
   #   pred_vec <- update_diversity(pred_vec)
   #   pred_vec
   # }
-
+  #
   # extract_outputs <- function(pred_vec, sim_year) {
-  #   pred_vec |>
+  #   # Debug: check structure
+  #   cat("Extracting outputs for year", sim_year, "- columns:",
+  #       paste(names(pred_vec), collapse = ", "), "\n")
+  #
+  #   result <- pred_vec |>
   #     transmute(
   #       PlotID, Year = sim_year, DGP, SPCD,
   #       B = B_row, N = N_row,
   #       rec_BA, up_BA, mort_BA,
-  #       Hd, Hs, Shannon_DGP, Simpson_DGP, Shannon_SPCD, Simpson_SPCD
+  #       Hd, Hs
+  #       # Shannon_DGP,
+  #       # Simpson_DGP,
+  #       # Shannon_SPCD,
+  #       # Simpson_SPCD
   #     )
+  #
+  #   # Debug: check result
+  #   cat("Extracted outputs have columns:", paste(names(result), collapse = ", "), "\n")
+  #   return(result)
   # }
-
+  # # Replace the summarize_predictions function with a more robust version:
   # summarize_predictions <- function(df) {
+  #   # Debug: check what columns are available
+  #   cat("Columns in summarize_predictions:", paste(names(df), collapse = ", "), "\n")
+  #
+  #   # Check if Year column exists
+  #   if (!"Year" %in% names(df)) {
+  #     stop("Year column missing in summarize_predictions. Available columns: ",
+  #          paste(names(df), collapse = ", "))
+  #   }
+  #
   #   df |>
   #     group_by(PlotID, Year) |>
   #     summarise(
@@ -261,131 +282,135 @@ biomass_projection <- function(output_dir = NULL,
   #       mort_BA_total  = sum(mort_BA, na.rm = TRUE),
   #       Hd             = first(Hd),
   #       Hs             = first(Hs),
-  #       Shannon_DGP    = first(Shannon_DGP),
-  #       Simpson_DGP    = first(Simpson_DGP),
-  #       Shannon_SPCD   = first(Shannon_SPCD),
-  #       Simpson_SPCD   = first(Simpson_SPCD),
+  #       # Shannon_DGP    = first(Shannon_DGP),
+  #       # Simpson_DGP    = first(Simpson_DGP),
+  #       # Shannon_SPCD   = first(Shannon_SPCD),
+  #       # Simpson_SPCD   = first(Simpson_SPCD),
   #       .groups = "drop"
   #     )
   # }
-
+  #
   # ---- Process plots ----
-  if (nrow(t1) > 1 && cores > 1) {
-    # Use parallel processing for multiple plots
-    cat("Running parallel processing for", nrow(t1),
-        "plots using", min(cores, nrow(t1)), "cores\n")
+  # Use sequential processing for single plot or when cores = 1
+  cat("Running sequential processing for", nrow(t1), "plot(s)\n")
 
-    cl <- makeCluster(min(cores, nrow(t1)))
-    registerDoParallel(cl)
-    on.exit({
-      stopCluster(cl)
-      # Clean up temp directories
-      unlink(temp_pred_dir, recursive = TRUE)
-      unlink(temp_summary_dir, recursive = TRUE)
+  results <- list()
+  for (i in 1:nrow(t1)) {
+    tryCatch({
+      plt_vec <- t1[i, ]
+      actual_plot_id <- plt_vec$PlotID[1]  # Get the actual PlotID
+      DBH <- if (grepl("DRC", actual_plot_id)) drc_dbh_vec else all_dbh_vec
+
+      pred_vec <- prepare_pred_vector(plt_vec, DBH)
+
+      year_results <- vector("list", length = years + 1)
+      for (sim_year in 0:years) {
+        pred_vec$Year <- sim_year
+        pred_vec <- update_predictions(pred_vec, m, u, r, DBH)
+        year_results[[sim_year + 1]] <- extract_outputs(pred_vec, sim_year)
+      }
+
+      pred_df <- bind_rows(year_results)
+      summary_df <- summarize_predictions(pred_df)
+
+      # Save using actual PlotID instead of sequential number
+      safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
+      write.csv(pred_df, file.path(temp_pred_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
+      write.csv(summary_df, file.path(temp_summary_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
+
+      cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:", plot_id, ")\n")
+      results[[i]] <- list(pred = pred_df, summary = summary_df)
+
+    }, error = function(e) {
+      cat(format(Sys.time(), "%H:%M"), "Error in plot", i, ":", e$message, "\n")
+      results[[i]] <- NULL
     })
-
-    results <- foreach(i = 1:nrow(t1), .packages = c("tidyverse","ranger"),
-                       .combine = 'c') %dopar% {
-      tryCatch({
-        plt_vec <- t1[i, ]
-        actual_plot_id <- plt_vec$PlotID[1]  # Get the actual PlotID
-        DBH <- if (grepl("DRC", actual_plot_id)) drc_dbh_vec else all_dbh_vec
-
-        pred_vec <- prepare_pred_vector(plt_vec, DBH)
-
-        year_results <- vector("list", length = years + 1)
-        for (sim_year in 0:years) {
-          pred_vec$Year <- sim_year
-          pred_vec <- update_predictions(pred_vec, m, u, r, DBH)
-          year_results[[sim_year + 1]] <- extract_outputs(pred_vec, sim_year)
-        }
-
-        pred_df <- bind_rows(year_results)
-        summary_df <- summarize_predictions(pred_df)
-
-        # Save using actual PlotID instead of sequential number
-        safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
-        write.csv(pred_df, file.path(temp_pred_dir,
-                                     paste0("plot_", safe_plot_id, ".csv")),
-                  row.names = FALSE)
-        write.csv(summary_df, file.path(temp_summary_dir,
-                                        paste0("plot_", safe_plot_id, ".csv")),
-                  row.names = FALSE)
-
-        cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:",
-            actual_plot_id, ")\n")
-        list(list(pred = pred_df, summary = summary_df))
-
-      }, error = function(e) {
-        cat(format(Sys.time(), "%H:%M"), "Error in plot", i, ":",
-            e$message, "\n")
-        NULL
-      })
-    }
-
-  } else {
-    # Use sequential processing for single plot or when cores = 1
-    cat("Running sequential processing for", nrow(t1), "plot(s)\n")
-
-    results <- list()
-    for (i in 1:nrow(t1)) {
-      tryCatch({
-        plt_vec <- t1[i, ]
-        actual_plot_id <- plt_vec$PlotID[1]  # Get the actual PlotID
-        DBH <- if (grepl("DRC", actual_plot_id)) drc_dbh_vec else all_dbh_vec
-
-        pred_vec <- prepare_pred_vector(plt_vec, DBH)
-
-        year_results <- vector("list", length = years + 1)
-        for (sim_year in 0:years) {
-          pred_vec$Year <- sim_year
-          pred_vec <- update_predictions(pred_vec, m, u, r, DBH)
-          year_results[[sim_year + 1]] <- extract_outputs(pred_vec, sim_year)
-        }
-
-        pred_df <- bind_rows(year_results)
-        summary_df <- summarize_predictions(pred_df)
-
-        # Save using actual PlotID instead of sequential number
-        safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
-        write.csv(pred_df, file.path(temp_pred_dir,
-                                     paste0("plot_", safe_plot_id, ".csv")),
-                  row.names = FALSE)
-        write.csv(summary_df, file.path(temp_summary_dir,
-                                        paste0("plot_", safe_plot_id, ".csv")),
-                  row.names = FALSE)
-
-        cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:",
-            plot_id, ")\n")
-        results[[i]] <- list(pred = pred_df, summary = summary_df)
-
-      }, error = function(e) {
-        cat(format(Sys.time(), "%H:%M"), "Error in plot", i, ":",
-            e$message, "\n")
-        results[[i]] <- NULL
-      })
-    }
-
-    # Convert to same format as parallel results
-    results <- Filter(Negate(is.null), results)
   }
+
+  # Convert to same format as parallel results
+  results <- Filter(Negate(is.null), results)
+
 
   # ---- Combine outputs ----
   # Read from the correct temp directories within model_output
-  all_preds   <- list.files(temp_pred_dir, full.names = TRUE,
-                            pattern = "\\.csv$") |>
-    map_dfr(read.csv)
-  all_summary <- list.files(temp_summary_dir, full.names = TRUE,
-                            pattern = "\\.csv$") |>
-    map_dfr(read.csv)
+  cat("Reading prediction files from:", temp_pred_dir, "\n")
+  cat("Reading summary files from:", temp_summary_dir, "\n")
+
+  # Check what files exist
+  pred_files <- list.files(temp_pred_dir, full.names = TRUE, pattern = "\\.csv$")
+  summary_files <- list.files(temp_summary_dir, full.names = TRUE, pattern = "\\.csv$")
+
+  cat("Found", length(pred_files), "prediction files and", length(summary_files), "summary files\n")
+
+  # Read files with better error handling
+  read_with_check <- function(file_path) {
+    tryCatch({
+      df <- read.csv(file_path)
+      cat("Successfully read:", basename(file_path), "- columns:", paste(names(df), collapse = ", "), "\n")
+      if (!"Year" %in% names(df)) {
+        warning("Year column missing in: ", basename(file_path))
+      }
+      df
+    }, error = function(e) {
+      warning("Failed to read: ", basename(file_path), " - ", e$message)
+      NULL
+    })
+  }
+
+  all_preds <- map_dfr(pred_files, read_with_check)
+  all_summary <- map_dfr(summary_files, read_with_check)
+
+
+  all_preds <- all_preds |>
+    mutate(SpeciesGroup = case_when(
+      SPCD == 1 ~ 'Sapindaceae (SD)',
+      SPCD == 2 ~ 'Quercus - Quercus (QQ)',
+      SPCD == 3 ~ 'Quercus - Lobatae (QL)',
+      SPCD == 4 ~ 'Quercus - Velutina (QV)',
+      SPCD == 5 ~ 'Juglandaceae (JD)',
+      SPCD == 6 ~ 'Gymnosperms (GS)',
+      SPCD == 7 ~ 'Tulip (TT)',
+      SPCD == 8 ~ 'Fagus (FG)',
+      SPCD == 9 ~ 'Other Angiosperms (OA)'
+    ))
+
+  # Check if we have any data
+  if (nrow(all_preds) == 0) {
+    stop("No prediction data found after processing")
+  }
+  if (nrow(all_summary) == 0) {
+    stop("No summary data found after processing")
+  }
+
+  cat("Combined predictions columns:", paste(names(all_preds), collapse = ", "), "\n")
+  cat("Combined summaries columns:", paste(names(all_summary), collapse = ", "), "\n")
+
+  # Check if Year column exists in summaries
+  if (!"Year" %in% names(all_summary)) {
+    stop("Year column missing in combined summary data. Available columns: ",
+         paste(names(all_summary), collapse = ", "))
+  }
 
   # Save combined files to model_output directory
-  write.csv(all_preds, file.path(summary_output, "all_predictions.csv"),
-            row.names = FALSE)
-  write.csv(all_summary, file.path(summary_output, "all_summaries.csv"),
-            row.names = FALSE)
+  write.csv(all_preds, file.path(summary_output, "all_predictions.csv"), row.names = FALSE)
+  write.csv(all_summary, file.path(summary_output, "all_summaries.csv"), row.names = FALSE)
 
   # ---- Year-level aggregate (across plots) ----
+  # Add additional safety check
+  cat("Starting year-level aggregation...\n")
+  cat("Summary data structure:\n")
+  print(str(all_summary))
+
+  # Check if Year column is numeric/integer
+  if (!is.numeric(all_summary$Year)) {
+    cat("Year column is of type:", class(all_summary$Year), "\n")
+    # Try to convert if it's character/factor
+    if (is.character(all_summary$Year) || is.factor(all_summary$Year)) {
+      all_summary$Year <- as.integer(as.character(all_summary$Year))
+      cat("Converted Year column to integer\n")
+    }
+  }
+
   summary_by_year <- all_summary |>
     group_by(Year) |>
     summarise(
@@ -405,19 +430,21 @@ biomass_projection <- function(output_dir = NULL,
 
       Hd_mean            = mean(Hd, na.rm = TRUE),
       Hs_mean            = mean(Hs, na.rm = TRUE),
-      Shannon_DGP_mean   = mean(Shannon_DGP, na.rm = TRUE),
-      Simpson_DGP_mean   = mean(Simpson_DGP, na.rm = TRUE),
-      Shannon_SPCD_mean  = mean(Shannon_SPCD, na.rm = TRUE),
-      Simpson_SPCD_mean  = mean(Simpson_SPCD, na.rm = TRUE),
+      # Shannon_DGP_mean   = mean(Shannon_DGP, na.rm = TRUE),
+      # Simpson_DGP_mean   = mean(Simpson_DGP, na.rm = TRUE),
+      # Shannon_SPCD_mean  = mean(Shannon_SPCD, na.rm = TRUE),
+      # Simpson_SPCD_mean  = mean(Simpson_SPCD, na.rm = TRUE),
       .groups = "drop"
     )
 
   write.csv(summary_by_year, file.path(summary_output, "year_summary.csv"),
             row.names = FALSE)
 
+
+
   # ---- Additional rollups ----
   species_year <- all_preds |>
-    group_by(SPCD, Year) |>
+    group_by(SPCD, SpeciesGroup, Year) |>
     summarise(
       BA_total     = sum(B, na.rm = TRUE),
       N_total      = sum(N, na.rm = TRUE),
@@ -427,11 +454,12 @@ biomass_projection <- function(output_dir = NULL,
       .groups = "drop"
     )
 
-  write.csv(species_year, file.path(summary_output, "species_year.csv"),
+  write.csv(species_year,
+            file.path(summary_output, "species_year.csv"),
             row.names = FALSE)
 
   plot_species_year <- all_preds |>
-    group_by(PlotID, SPCD, Year) |>
+    group_by(PlotID, SPCD, SpeciesGroup, Year) |>
     summarise(
       BA_total     = sum(B, na.rm = TRUE),
       N_total      = sum(N, na.rm = TRUE),
@@ -460,7 +488,7 @@ biomass_projection <- function(output_dir = NULL,
             row.names = FALSE)
 
   plot_dgp_year <- all_preds |>
-    group_by(PlotID, DGP, Year) |>
+    group_by(PlotID, DGP, SpeciesGroup, Year) |>
     summarise(
       BA_total     = sum(B, na.rm = TRUE),
       N_total      = sum(N, na.rm = TRUE),
@@ -470,11 +498,12 @@ biomass_projection <- function(output_dir = NULL,
       .groups = "drop"
     )
 
-  write.csv(plot_dgp_year, file.path(summary_output, "plot_dgp_year.csv"),
+  write.csv(plot_dgp_year,
+            file.path(summary_output, "plot_dgp_year.csv"),
             row.names = FALSE)
 
   plot_spcd_dgp_year <- all_preds |>
-    group_by(PlotID, SPCD, DGP, Year) |>
+    group_by(PlotID, SPCD, SpeciesGroup, DGP, Year) |>
     summarise(
       BA_total     = sum(B, na.rm = TRUE),
       N_total      = sum(N, na.rm = TRUE),
@@ -489,6 +518,6 @@ biomass_projection <- function(output_dir = NULL,
             row.names = FALSE)
 
   cat("All outputs written to:", summary_output, "\n")
-  return(summary_output)
+  # return(summary_output)
 }
 
