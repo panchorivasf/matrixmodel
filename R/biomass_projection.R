@@ -106,7 +106,8 @@ biomass_projection <- function(output_dir = NULL,
     # Input validation
     if (!all(plot_id %in% t1$PlotID)) {
       missing_ids <- setdiff(plot_id, t1$PlotID)
-      warning("Some plot_ids not found in plot_data: ", paste(missing_ids, collapse = ", "))
+      warning("Some plot_ids not found in plot_data: ",
+              paste(missing_ids, collapse = ", "))
     }
 
     original_count <- nrow(t1)
@@ -114,7 +115,8 @@ biomass_projection <- function(output_dir = NULL,
       dplyr::filter(PlotID %in% plot_id)
 
     if (nrow(t1) == 0) {
-      stop("No plots found with the specified plot_id(s): ", paste(plot_id, collapse = ", "))
+      stop("No plots found with the specified plot_id(s): ",
+           paste(plot_id, collapse = ", "))
     }
 
     cat("Filtered to", nrow(t1), "plot(s) out of", original_count, "total\n")
@@ -164,10 +166,15 @@ biomass_projection <- function(output_dir = NULL,
 
       # Save using actual PlotID instead of sequential number
       safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
-      write.csv(pred_df, file.path(temp_pred_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
-      write.csv(summary_df, file.path(temp_summary_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
+      write.csv(pred_df, file.path(temp_pred_dir,
+                                   paste0("plot_", safe_plot_id, ".csv")),
+                row.names = FALSE)
+      write.csv(summary_df, file.path(temp_summary_dir,
+                                      paste0("plot_", safe_plot_id, ".csv")),
+                row.names = FALSE)
 
-      cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:", plot_id, ")\n")
+      cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:",
+          plot_id, ")\n")
       results[[i]] <- list(pred = pred_df, summary = summary_df)
 
     }, error = function(e) {
@@ -186,16 +193,20 @@ biomass_projection <- function(output_dir = NULL,
   cat("Reading summary files from:", temp_summary_dir, "\n")
 
   # Check what files exist
-  pred_files <- list.files(temp_pred_dir, full.names = TRUE, pattern = "\\.csv$")
-  summary_files <- list.files(temp_summary_dir, full.names = TRUE, pattern = "\\.csv$")
+  pred_files <- list.files(temp_pred_dir, full.names = TRUE,
+                           pattern = "\\.csv$")
+  summary_files <- list.files(temp_summary_dir, full.names = TRUE,
+                              pattern = "\\.csv$")
 
-  cat("Found", length(pred_files), "prediction files and", length(summary_files), "summary files\n")
+  cat("Found", length(pred_files), "prediction files and",
+      length(summary_files), "summary files\n")
 
   # Read files with better error handling
   read_with_check <- function(file_path) {
     tryCatch({
       df <- read.csv(file_path)
-      cat("Successfully read:", basename(file_path), "- columns:", paste(names(df), collapse = ", "), "\n")
+      cat("Successfully read:", basename(file_path), "- columns:",
+          paste(names(df), collapse = ", "), "\n")
       if (!"Year" %in% names(df)) {
         warning("Year column missing in: ", basename(file_path))
       }
@@ -234,8 +245,10 @@ biomass_projection <- function(output_dir = NULL,
     stop("No summary data found after processing")
   }
 
-  cat("Combined predictions columns:", paste(names(all_preds), collapse = ", "), "\n")
-  cat("Combined summaries columns:", paste(names(all_summary), collapse = ", "), "\n")
+  cat("Combined predictions columns:", paste(names(all_preds),
+                                             collapse = ", "), "\n")
+  cat("Combined summaries columns:", paste(names(all_summary),
+                                           collapse = ", "), "\n")
 
   # Check if Year column exists in summaries
   if (!"Year" %in% names(all_summary)) {
@@ -244,8 +257,10 @@ biomass_projection <- function(output_dir = NULL,
   }
 
   # Save combined files to model_output directory
-  write.csv(all_preds, file.path(summary_output, "all_predictions.csv"), row.names = FALSE)
-  write.csv(all_summary, file.path(summary_output, "all_summaries.csv"), row.names = FALSE)
+  write.csv(all_preds, file.path(summary_output, "all_predictions.csv"),
+            row.names = FALSE)
+  write.csv(all_summary, file.path(summary_output, "all_summaries.csv"),
+            row.names = FALSE)
 
   # ---- Year-level aggregate (across plots) ----
   # Add additional safety check
