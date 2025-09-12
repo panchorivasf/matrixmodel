@@ -10,11 +10,11 @@ biomass_projection(
   cores = -1,
   plot_data = NULL,
   plot_id = NULL,
+  dbh_ref = NULL,
+  years = 50,
   m_model = "./models/model_mortality.rds",
   u_model = "./models/model_upgrowth.rds",
-  r_model = "./models/model_recruitment1.rds",
-  dbh_ref = NULL,
-  years = 50
+  r_model = "./models/model_recruitment1.rds"
 )
 }
 \arguments{
@@ -30,16 +30,16 @@ group information.}
 \item{plot_id}{Optional specific plot ID to process. If NULL, processes all
 plots.}
 
+\item{dbh_ref}{Data frame containing DBH reference data for different
+diameter groups.}
+
+\item{years}{Number of years to project forward. Default is 50 years.}
+
 \item{m_model}{Path to mortality model RDS file.}
 
 \item{u_model}{Path to upgrowth model RDS file.}
 
 \item{r_model}{Path to recruitment model RDS file.}
-
-\item{dbh_ref}{Data frame containing DBH reference data for different
-diameter groups.}
-
-\item{years}{Number of years to project forward. Default is 50 years.}
 }
 \value{
 Returns the path to the output directory containing all generated
