@@ -316,12 +316,27 @@ biomass_projection <- function(save_to = NULL,
       }
 
       pred_df <- bind_rows(year_results)
+
+
+      pred_df <- pred_df |>
+          mutate(SpeciesGroup = case_when(
+            SPCD == 1 ~ 'Sapindaceae (SD)',
+            SPCD == 2 ~ 'Quercus - Quercus (QQ)',
+            SPCD == 3 ~ 'Quercus - Lobatae (QL)',
+            SPCD == 4 ~ 'Quercus - Velutina (QV)',
+            SPCD == 5 ~ 'Juglandaceae (JD)',
+            SPCD == 6 ~ 'Gymnosperms (GS)',
+            SPCD == 7 ~ 'Tulip (TT)',
+            SPCD == 8 ~ 'Fagus (FG)',
+            SPCD == 9 ~ 'Other Angiosperms (OA)'
+          ))
+
       summary_df <- summarize_predictions(pred_df)
 
       # Save using actual PlotID instead of sequential number
       safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
-      write.csv(pred_df, file.path(temp_pred_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
-      write.csv(summary_df, file.path(temp_summary_dir, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
+      write.csv(pred_df, file.path(save_to, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
+      write.csv(summary_df, file.path(save_to, paste0("plot_", safe_plot_id, ".csv")), row.names = FALSE)
 
       cat(format(Sys.time(), "%H:%M"), "Finished plot", i, "(PlotID:", plot_id, ")\n")
       results[[i]] <- list(pred = pred_df, summary = summary_df)
@@ -332,21 +347,21 @@ biomass_projection <- function(save_to = NULL,
     })
   }
 
-  # Convert to same format as parallel results
-  results <- Filter(Negate(is.null), results)
-
-  results <- results |>
-    mutate(SpeciesGroup = case_when(
-      SPCD == 1 ~ 'Sapindaceae (SD)',
-      SPCD == 2 ~ 'Quercus - Quercus (QQ)',
-      SPCD == 3 ~ 'Quercus - Lobatae (QL)',
-      SPCD == 4 ~ 'Quercus - Velutina (QV)',
-      SPCD == 5 ~ 'Juglandaceae (JD)',
-      SPCD == 6 ~ 'Gymnosperms (GS)',
-      SPCD == 7 ~ 'Tulip (TT)',
-      SPCD == 8 ~ 'Fagus (FG)',
-      SPCD == 9 ~ 'Other Angiosperms (OA)'
-    ))
+  # # Convert to same format as parallel results
+  # results <- Filter(Negate(is.null), results)
+#
+#   results <- results |>
+#     mutate(SpeciesGroup = case_when(
+#       SPCD == 1 ~ 'Sapindaceae (SD)',
+#       SPCD == 2 ~ 'Quercus - Quercus (QQ)',
+#       SPCD == 3 ~ 'Quercus - Lobatae (QL)',
+#       SPCD == 4 ~ 'Quercus - Velutina (QV)',
+#       SPCD == 5 ~ 'Juglandaceae (JD)',
+#       SPCD == 6 ~ 'Gymnosperms (GS)',
+#       SPCD == 7 ~ 'Tulip (TT)',
+#       SPCD == 8 ~ 'Fagus (FG)',
+#       SPCD == 9 ~ 'Other Angiosperms (OA)'
+#     ))
 
   print(results)
 
