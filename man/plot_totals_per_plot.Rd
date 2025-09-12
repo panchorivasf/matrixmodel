@@ -4,14 +4,14 @@
 \alias{plot_totals_per_plot}
 \title{Plot basal area and tree density trends using plotly}
 \usage{
-plot_totals_per_plot(data = NULL, dir = out_dir, save_html = FALSE)
+plot_totals_per_plot(data = NULL, save_to = NULL, save_html = FALSE)
 }
 \arguments{
 \item{data}{Either a data frame or character string specifying file
 path/pattern.
   If character, uses `latest_file()` to find the most recent matching file.}
 
-\item{dir}{Character string specifying directory path to search for files
+\item{save_to}{Character string specifying directory path to search for files
 (only used if `data` is a character string).}
 
 \item{save_html}{Logical indicating whether to save interactive HTML plots.
@@ -38,7 +38,7 @@ plots <- plot_totals_per_plot_interactive("summary_results_2023.csv")
 plots <- plot_totals_per_plot_interactive(my_dataframe)
 
 # From directory with pattern matching
-plots <- plot_totals_per_plot_interactive(dir = "output",
+plots <- plot_totals_per_plot_interactive(save_to = "output",
                                          data = "summary_results__.*\\\\.csv")
 }
 

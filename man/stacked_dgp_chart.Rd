@@ -7,7 +7,7 @@
 stacked_dgp_chart(
   plot_id,
   data = NULL,
-  dir = out_dir,
+  save_to = NULL,
   metric = c("BA_total", "N_total"),
   save_html = FALSE
 )
@@ -18,7 +18,7 @@ stacked_dgp_chart(
 \item{data}{Either a data frame or character string specifying file path/pattern.
 If character, uses `latest_file()` to find the most recent matching file.}
 
-\item{dir}{Character string specifying directory path to search for files
+\item{save_to}{Character string specifying directory path to search for files
 (only used if `data` is a character string).}
 
 \item{metric}{Character string specifying the metric to plot: "BA_total" (basal area)
@@ -43,7 +43,7 @@ chart <- stacked_dgp_chart(plot_id = "P1", data = dgp_data)
 chart <- stacked_dgp_chart(plot_id = "P1", data = "plot_dgp_year_data.csv")
 
 # From directory with pattern matching
-chart <- stacked_dgp_chart(plot_id = "P1", dir = "output",
+chart <- stacked_dgp_chart(plot_id = "P1", save_to = "output",
                           data = "plot_dgp_year_.*\\\\.csv")
 }
 

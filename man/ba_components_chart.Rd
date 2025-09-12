@@ -4,7 +4,7 @@
 \alias{ba_components_chart}
 \title{Create interactive stacked bar chart of BA components}
 \usage{
-ba_components_chart(plot_id, data = NULL, dir = out_dir, save_html = FALSE)
+ba_components_chart(plot_id, data = NULL, dir = NULL, save_html = FALSE)
 }
 \arguments{
 \item{plot_id}{Character or numeric identifier for the plot to visualize}

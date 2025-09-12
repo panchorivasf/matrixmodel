@@ -8,7 +8,7 @@ species_dgp_grid(
   plot_id,
   years = 50,
   data = NULL,
-  dir = out_dir,
+  save_to = out_dir,
   metric = c("BA_total", "N_total"),
   save_html = FALSE
 )
@@ -21,7 +21,7 @@ species_dgp_grid(
 \item{data}{Either a data frame or character string specifying file path/pattern.
 If character, uses `latest_file()` to find the most recent matching file.}
 
-\item{dir}{Character string specifying directory path to search for files
+\item{save_to}{Character string specifying directory path to search for files
 (only used if `data` is a character string).}
 
 \item{metric}{Character string specifying the metric to plot: "BA_total" (basal area)
@@ -46,7 +46,7 @@ grid <- species_dgp_grid(plot_id = "P1", years = c(0, 50, 100), data = spcd_dgp_
 grid <- species_dgp_grid(plot_id = "P1", data = "plot_spcd_dgp_year_data.csv")
 
 # From directory with pattern matching
-grid <- species_dgp_grid(plot_id = "P1", dir = "output",
+grid <- species_dgp_grid(plot_id = "P1", save_to = "output",
                         data = "plot_spcd_dgp_year_.*\\\\.csv")
 }
 
