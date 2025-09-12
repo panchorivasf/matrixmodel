@@ -223,6 +223,9 @@ biomass_projection <- function(output_dir = NULL,
       SPCD == 9 ~ 'Other Angiosperms (OA)'
     ))
 
+  all_preds <- all_preds |>
+    select(PlotID, SPCD, SpeciesGroup, everything())
+
   # Check if we have any data
   if (nrow(all_preds) == 0) {
     stop("No prediction data found after processing")
