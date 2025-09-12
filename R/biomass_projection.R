@@ -14,12 +14,12 @@
 #'   group information.
 #' @param plot_id Optional specific plot ID to process. If NULL, processes all
 #' plots.
-#' @param m_model Path to mortality model RDS file.
-#' @param u_model Path to upgrowth model RDS file.
-#' @param r_model Path to recruitment model RDS file.
 #' @param dbh_ref Data frame containing DBH reference data for different
 #'   diameter groups.
 #' @param years Number of years to project forward. Default is 50 years.
+#' @param m_model Path to mortality model RDS file.
+#' @param u_model Path to upgrowth model RDS file.
+#' @param r_model Path to recruitment model RDS file.
 #'
 #' @return Returns the path to the output directory containing all generated
 #'   CSV files with projection results.
@@ -54,15 +54,12 @@
 #' )
 #' }
 #'
-#' @importFrom dplyr filter group_by summarise mutate select distinct arrange
-#' @importFrom dplyr transmute if_else lag rename left_join n_distinct
-#' @importFrom dplyr coalesce bind_rows
+#' @import dplyr
 #' @importFrom tidyr pivot_longer
 #' @importFrom purrr map_dfr
 #' @importFrom doParallel registerDoParallel
-#' @importFrom parallel stopCluster
 #' @importFrom foreach foreach %dopar%
-#' @importFrom parallel makeCluster detectCores
+#' @importFrom parallel makeCluster detectCores stopCluster
 #' @importFrom readr write_csv
 #' @importFrom stats sd
 #' @export
@@ -71,11 +68,11 @@ biomass_projection <- function(output_dir = NULL,
                                cores = -1,
                                plot_data = NULL,
                                plot_id = NULL,
+                               dbh_ref = NULL,
+                               years = 50,
                                m_model = "./models/model_mortality.rds",
                                u_model = "./models/model_upgrowth.rds",
-                               r_model = "./models/model_recruitment1.rds",
-                               dbh_ref = NULL,
-                               years = 50) {
+                               r_model = "./models/model_recruitment1.rds") {
 
 
   if(is.null(output_dir)){
@@ -119,7 +116,8 @@ biomass_projection <- function(output_dir = NULL,
            paste(plot_id, collapse = ", "))
     }
 
-    cat("Filtered to", nrow(t1), "plot(s) out of", original_count, "total\n")
+    cat("Filtered to", nrow(t1), "plot(s) out of", original_count,
+        "total\n")
   }
 
   m <- readRDS(m_model)
@@ -128,10 +126,12 @@ biomass_projection <- function(output_dir = NULL,
 
   # ---- DBH reference ----
   dbh_mean_all <- dbh_ref |>
-    group_by(DGP) |> summarise(DBH = mean(DBH, na.rm = TRUE), .groups = "drop")
+    group_by(DGP) |> summarise(DBH = mean(DBH, na.rm = TRUE),
+                               .groups = "drop")
   dbh_mean_drc <- dbh_ref |>
     filter(grepl("DRC", PlotID)) |>
-    group_by(DGP) |> summarise(DBH = mean(DBH, na.rm = TRUE), .groups = "drop")
+    group_by(DGP) |> summarise(DBH = mean(DBH, na.rm = TRUE),
+                               .groups = "drop")
 
   ref <- tibble(DGP = 1:15) |>
     left_join(dbh_mean_drc |> rename(DBH_drc = DBH), by = "DGP") |>
