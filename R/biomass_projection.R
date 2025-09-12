@@ -297,8 +297,8 @@ biomass_projection <- function(save_to = NULL,
 
   # ---- Process plots ----
   # Use sequential processing for single plot or when cores = 1
-  cat("Running sequential processing for", nrow(t1), "plot(s)\n")
-
+  # cat("Running sequential processing for", nrow(t1), "plot(s)\n")
+  cat("Calculating projection...")
   results <- list()
   for (i in 1:nrow(t1)) {
     tryCatch({
@@ -349,6 +349,11 @@ biomass_projection <- function(save_to = NULL,
     ))
 
   print(results)
+
+
+  write.csv(results, file.path(summary_output, "plot_",
+                               plot_id,"results.csv"),
+            row.names = FALSE)
 
 
 
