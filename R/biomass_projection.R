@@ -366,8 +366,8 @@ biomass_projection <- function(save_to = NULL,
   print(results)
 
 
-  write.csv(results, file.path(summary_output, "plot_",
-                               plot_id,"results.csv"),
+  write.csv(results, file.path(summary_output, paste0("plot_",
+                               plot_id,"results.csv")),
             row.names = FALSE)
 
 
