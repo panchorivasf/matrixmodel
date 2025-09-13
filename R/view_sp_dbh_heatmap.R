@@ -4,7 +4,7 @@
 #' across multiple year for a specific plot.
 #'
 #' @param plot_id Character or numeric identifier for the plot to visualize
-#' @param  Numeric vector of year to include in the faceted grid
+#' @param year Numeric vector of year to include in the faceted grid
 #' @param data Either a data frame or character string specifying file path/pattern.
 #'   If character, uses `latest_file()` to find the most recent matching file.
 #' @param save_to Character string specifying directory path to search for files

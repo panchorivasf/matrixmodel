@@ -7,9 +7,12 @@
 #' @param m_model Path to the mortality model '.rds' file.
 #' @param u_model Path to the upgrowth model '.rds' file.
 #' @param r_model Path to the recruitment model '.rds' file.
+#' @param output_folder_name Character. Name for the output file.
 #'
 #' @returns A list with data frames
 #' @export
+#'
+#' @importFrom utils capture.output read.csv write.csv
 #'
 #' @examples
 #' \dontrun{

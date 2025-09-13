@@ -6,7 +6,7 @@
 #' @param r Recruitment model
 #' @param DBH Diameter at breast height
 #'
-#' @import ranger
+#' @importFrom stats predict
 #'
 #' @returns A prediction
 #'

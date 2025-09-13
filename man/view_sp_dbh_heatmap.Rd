@@ -16,6 +16,8 @@ view_sp_dbh_heatmap(
 \arguments{
 \item{plot_id}{Character or numeric identifier for the plot to visualize}
 
+\item{year}{Numeric vector of year to include in the faceted grid}
+
 \item{data}{Either a data frame or character string specifying file path/pattern.
 If character, uses `latest_file()` to find the most recent matching file.}
 
@@ -27,8 +29,6 @@ or "N_total" (tree density). Defaults to "BA_total".}
 
 \item{save_html}{Logical indicating whether to save interactive HTML plot.
 Defaults to FALSE.}
-
-\item{Numeric}{vector of year to include in the faceted grid}
 }
 \value{
 A plotly subplot grid showing species by DGP heatmaps for a year

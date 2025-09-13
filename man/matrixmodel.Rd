@@ -10,15 +10,6 @@ The matrixmodel package provides functions for projecting forest biomass
 using matrix models with random forest components, specifically designed
 for Indiana forests in the US.
 }
-\section{Main Functions}{
-
-\itemize{
-  \item \code{\link{biomass_projection}} - Project biomass for a single plot
-  \item \code{\link{project_biomass_batch}} - Batch process multiple plots in parallel
-  \item \code{\link{heatmap_species_year}} - Create interactive heatmaps of species data
-}
-}
-
 \section{Data}{
 
 The package works with forest inventory data containing PlotID, SpeciesGroup,

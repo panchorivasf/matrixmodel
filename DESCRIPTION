@@ -15,7 +15,7 @@ Authors@R: c(
     )
   )
 Description: Functions to compute the matrix model with random forest for Indiana forests in the US.
-License: MIT
+License: CC BY-NC 4.0 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
@@ -23,16 +23,17 @@ Depends:
     R (>= 3.5.0)
 Imports:
     dplyr,
-    shiny,
-    leaflet,
-    DT,
-    shinyjs,
-    sf,
-    leaflet.extras,
     foreach,
     doParallel,
     parallel,
-    ranger
+    plotly,
+    readr,
+    htmlwidgets,
+    glue,
+    magick,
+    magrittr,
+    tidyr,
+    shiny
 Suggests:
     knitr,
     rmarkdown,

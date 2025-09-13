@@ -29,6 +29,8 @@ project_biomass(
 \item{u_model}{Path to the upgrowth model '.rds' file.}
 
 \item{r_model}{Path to the recruitment model '.rds' file.}
+
+\item{output_folder_name}{Character. Name for the output file.}
 }
 \value{
 A list with data frames

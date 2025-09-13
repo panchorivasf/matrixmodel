@@ -12,6 +12,8 @@
 #' @param n_cores Numeric. Number of cores to use in the parallel process.
 #' Default is -1 (all but one).
 #'
+#' @importFrom utils capture.output read.csv write.csv
+#'
 #' @returns A list with data frames
 #' @export
 #'
