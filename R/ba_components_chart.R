@@ -35,7 +35,10 @@
 #' @importFrom dplyr filter select mutate case_when
 #' @importFrom tidyr pivot_longer
 #' @importFrom glue glue
-#' @export
+#'
+#' @keywords internal
+#'
+#' @noRd
 ba_components_chart <- function(plot_id,
                                 data = NULL,
                                 dir = NULL,
