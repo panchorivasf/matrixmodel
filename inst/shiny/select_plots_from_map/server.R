@@ -287,10 +287,10 @@ server <- function(input, output, session) {
 
   # Enable/disable buttons based on state
   observe({
-    toggleState("add_button", condition = !is.null(values$temp_selected) && nrow(values$temp_selected) > 0)
-    toggleState("drop_button", condition = !is.null(input$selected_table_rows_selected) &&
+    shinyjs::toggleState("add_button", condition = !is.null(values$temp_selected) && nrow(values$temp_selected) > 0)
+    shinyjs::toggleState("drop_button", condition = !is.null(input$selected_table_rows_selected) &&
                   length(input$selected_table_rows_selected) > 0 &&
                   nrow(values$selected_data) > 0)
-    toggleState("download_button", condition = !is.null(values$selected_data) && nrow(values$selected_data) > 0)
+    shinyjs::toggleState("download_button", condition = !is.null(values$selected_data) && nrow(values$selected_data) > 0)
   })
 }

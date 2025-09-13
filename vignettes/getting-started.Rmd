@@ -14,11 +14,40 @@ knitr::opts_chunk$set(
 )
 ```
 
+The `matrixmodel` is an `R` package with tools to simulate forest stocks in the state of Indiana (USA) into the future. If provided with other model files (.rds), it can be used for other locations. The main function, `project_biomass()`, takes files in the "matrix model" format to simulate basal area (m2/ha) and density (trees per hectare, TPH), returning several summary outputs. These outputs then can be used to generate interactive plots.
 
-The Indiana Forest Simulator (alias 'matrixmodel') is an R package with tools to simulate forest stocks in the state of Indiana (USA) into the future. It takes files in the "matrix model" format to simulate basal area (m2/ha) and density (trees per hectare, TPH), returning several summary outputs. These outputs then can be used to generate interactive plots.
+To start, we are going to load the package into R and set the working directory:
 
-To start, we are going to load the package into R:
 ```{r setup}
-#remotes::install_github("panchorivasf/matrixmodel")
+# install.packages("pak")
+# pak::pak("panchorivasf/matrixmodel")
 library(matrixmodel)
+library(dplyr)
+
+# Set the working directory to the folder where the table with the forest plot data is saved.
+setwd("C:/Users/fcori/Desktop/FACAI/Indiana_model") # Change with your own path
+
+# Read the data into the R environment:
+data_indiana <- read.csv("./data/plotsT1.csv")
+
+# Inspect the data:
+glimpse(data_indiana)
 ```
+
+If you have too many plots in the csv file and you are interested in only some of them, you can subset them manually if you know their "PlotID" value, or visually from a map. First, let's subset this to a more manageable dataset:\
+
+```{r}
+plot_list <- head(unique(data_indiana$PlotID), n = 20)
+data_sample <- data_indiana |> filter(PlotID %in% plot_list)
+
+setwd("C:/Users/fcori/Desktop/FACAI/Indiana_model")
+write.csv(data_sample, "data_sample.csv")
+```
+
+Now we'll select plots from an interactive map. Shiny applications in `matrixmodel` are called with the `launch_app()` function. If run without arguments, it returns a list with the available apps. To launch one of them, just pass it within the `launch_app()` call, in quotations:
+
+```{r}
+launch_app("select") # Supports partial matching
+```
+
+Note that, as long as there is no name conflict with other apps, you can enter part of the app name.
