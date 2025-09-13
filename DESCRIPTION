@@ -19,14 +19,18 @@ License: MIT
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
-Depends: dplyr
-Imports:shiny,
-        leaflet,
-        DT,
-        shinyjs,
-        sf,
-        leaflet.extras
-Suggests:foreach,
-         doParallel
-         parallel
-         
+Depends: 
+    R (>= 3.5.0)
+Imports:
+    dplyr,
+    shiny,
+    leaflet,
+    DT,
+    shinyjs,
+    sf,
+    leaflet.extras,
+    foreach,
+    doParallel,
+    parallel
+Suggests:
+    testthat
