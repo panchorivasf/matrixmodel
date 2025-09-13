@@ -28,8 +28,8 @@
 #' \dontrun{
 #' species_dgp("Plot_1", data = "species_data.csv")
 #' }
-#'
-#' @export
+#' @keywords internal
+#' @noRd
 species_dgp <- function(plot_id,
                         years = c(0, 50, 100, 200, 300),
                         save_to = NULL,

@@ -33,4 +33,9 @@ Imports:
     doParallel,
     parallel
 Suggests:
+    knitr,
+    rmarkdown,
     testthat
+VignetteBuilder: knitr
+URL: https://github.com/panchorivasf/matrixmodel, https://panchorivasf.github.io/matrixmodel/
+BugReports: https://github.com/panchorivasf/matrixmodel/issues 
