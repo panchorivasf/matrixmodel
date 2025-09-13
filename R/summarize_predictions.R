@@ -75,16 +75,25 @@
 #' @keywords internal
 #' @noRd
 summarize_predictions <- function(df) {
+  # Debug: check what columns are available
+  # cat("Columns in summarize_predictions:", paste(names(df), collapse = ", "), "\n")
+
+  # Check if Year column exists
+  if (!"Year" %in% names(df)) {
+    stop("Year column missing in summarize_predictions. Available columns: ",
+         paste(names(df), collapse = ", "))
+  }
+
   df |>
     group_by(PlotID, Year) |>
     summarise(
       BA_total       = sum(B, na.rm = TRUE),
       N_total        = sum(N, na.rm = TRUE),
-      rec_BA_total   = sum(rec_BA,  na.rm = TRUE),
-      up_BA_total    = sum(up_BA,   na.rm = TRUE),
-      mort_BA_total  = sum(mort_BA, na.rm = TRUE),
-      Hd             = first(Hd),
-      Hs             = first(Hs),
+      # rec_BA_total   = sum(rec_BA,  na.rm = TRUE),
+      # up_BA_total    = sum(up_BA,   na.rm = TRUE),
+      # mort_BA_total  = sum(mort_BA, na.rm = TRUE),
+      # Hd             = first(Hd),
+      # Hs             = first(Hs),
       # Shannon_DGP    = first(Shannon_DGP),
       # Simpson_DGP    = first(Simpson_DGP),
       # Shannon_SPCD   = first(Shannon_SPCD),
@@ -92,3 +101,4 @@ summarize_predictions <- function(df) {
       .groups = "drop"
     )
 }
+

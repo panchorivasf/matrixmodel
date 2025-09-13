@@ -5,6 +5,8 @@
 #'
 #' @returns A vector
 #'
+#' @import dplyr
+#'
 #' @examples
 #' \dontrun{
 #' prepare_pred_vector(plt_vec, DBH)

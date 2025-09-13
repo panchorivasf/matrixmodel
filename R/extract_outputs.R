@@ -84,12 +84,24 @@
 #' @keywords internal
 #' @noRd
 extract_outputs <- function(pred_vec, sim_year) {
-  pred_vec |>
-    select(PlotID, PrevB, PrevN, DGP, SPCD, SpeciesGroup, TPH,
-           rec_BA, up_BA, mort_BA,
-           Hd, Hs
-           # Shannon_DGP, Simpson_DGP, Shannon_SPCD, Simpson_SPCD
-           ) |>
-    rename(B = PrevB, N = PrevN) |>
-    mutate(Year = sim_year)
+  # Debug: check structure
+  # cat("Extracting outputs for year", sim_year, "- columns:",
+  #     paste(names(pred_vec), collapse = ", "), "\n")
+
+  result <- pred_vec |>
+    transmute(
+      PlotID, Year = sim_year, DGP, SPCD,
+      B = B_row, N = N_row,
+      rec_BA, up_BA, mort_BA,
+      Hd, Hs
+      # Shannon_DGP,
+      # Simpson_DGP,
+      # Shannon_SPCD,
+      # Simpson_SPCD
+    )
+
+  # Debug: check result
+  # cat("Extracted outputs have columns:", paste(names(result), collapse = ", "), "\n")
+  return(result)
 }
+

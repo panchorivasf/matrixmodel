@@ -6,6 +6,8 @@
 #' @param r Recruitment model
 #' @param DBH Diameter at breast height
 #'
+#' @import ranger
+#'
 #' @returns A prediction
 #'
 #' @examples
@@ -21,14 +23,11 @@ update_predictions <- function(pred_vec, m, u, r, DBH) {
 
   pred_vec <- pred_vec |> mutate(TPH_1 = TPH)
 
-  mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)),
-                                         drop = FALSE])$predictions)
-  up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)),
-                                         drop = FALSE])$predictions) / 5
-  rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)),
-                                         drop = FALSE])$predictions)
+  mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)), drop = FALSE])$predictions)
+  up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)), drop = FALSE])$predictions) / 5
+  rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)), drop = FALSE])$predictions)
 
-  up[is.na(up) | up < 0 | pred_vec$DGP >= 20] <- 0
+  up[is.na(up) | up < 0 | pred_vec$DGP >= 15] <- 0
   mort[is.na(mort) | mort < 0] <- 0
   mort[mort > 1] <- 1
   rec[is.na(rec) | pred_vec$DGP != 1] <- 0

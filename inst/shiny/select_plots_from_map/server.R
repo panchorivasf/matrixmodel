@@ -1,0 +1,296 @@
+server <- function(input, output, session) {
+
+  # Reactive values to store data
+  values <- reactiveValues(
+    all_data = NULL,
+    selected_data = data.frame(),
+    temp_selected = data.frame(),
+    draw_count = 0,
+    clicked_points = character()
+  )
+
+  # Read uploaded CSV file
+  observeEvent(input$file, {
+    req(input$file)
+
+    tryCatch({
+      data <- read.csv(input$file$datapath)
+
+      # Check if required columns exist
+      required_cols <- c("Latitude", "Longitude", "PrevB", "PrevN", "Hs", "Hd", "PlotID")
+      missing_cols <- setdiff(required_cols, colnames(data))
+
+      if (length(missing_cols) > 0) {
+        showNotification(paste("Missing columns:", paste(missing_cols, collapse = ", ")),
+                         type = "error")
+        return()
+      }
+
+      # Convert PlotID to character to avoid scientific notation
+      data$PlotID <- as.character(data$PlotID)
+
+      values$all_data <- data
+      values$clicked_points <- character()
+      values$temp_selected <- data.frame()
+
+      # Create map
+      output$map <- renderLeaflet({
+        leaflet() %>%
+          addTiles() %>%
+          addCircleMarkers(
+            data = data,
+            lng = ~Longitude,
+            lat = ~Latitude,
+            layerId = ~PlotID,
+            radius = 6,
+            color = "blue",
+            fillOpacity = 0.8,
+            stroke = FALSE,
+            # label = ~lapply(paste(
+            #   "PlotID:", PlotID,
+            #   "PrevB:", round(PrevB, digits = 1),
+            #   "PrevN:", round(PrevN, digits = 1),
+            #   "Hs:", round(Hs, digits = 1),
+            #   "Hd:", round(Hd, digits = 1)
+            # ),
+            label = ~paste(
+              "PlotID:", PlotID, "\n",
+              "PrevB:", round(PrevB, digits = 1), "\n",
+              "PrevN:", round(PrevN, digits = 1), "\n",
+              "Hs:", round(Hs, digits = 1), "\n",
+              "Hd:", round(Hd, digits = 1)
+            ),
+            popup = ~paste0(
+              "<strong>PlotID:</strong> ", PlotID, "<br>",
+              "<strong>PrevB:</strong> ", round(PrevB, digits = 1), "<br>",
+              "<strong>PrevN:</strong> ", round(PrevN, digits = 1), "<br>",
+              "<strong>Hs:</strong> ", round(Hs, digits = 1), "<br>",
+              "<strong>Hd:</strong> ", round(Hd, digits = 1)
+            )
+          ) %>%
+          addDrawToolbar(
+            targetGroup = 'draw',
+            polylineOptions = FALSE,
+            polygonOptions = FALSE,
+            circleOptions = FALSE,
+            markerOptions = FALSE,
+            circleMarkerOptions = FALSE,
+            rectangleOptions = list(
+              shapeOptions = list(
+                color = '#ff0000',
+                weight = 2,
+                fillOpacity = 0.3
+              ),
+              repeatMode = FALSE
+            ),
+            editOptions = FALSE
+          )
+      })
+
+    }, error = function(e) {
+      showNotification("Error reading file. Please check the format.", type = "error")
+    })
+  })
+
+  # Handle individual point clicks
+  observeEvent(input$map_marker_click, {
+    req(values$all_data)
+
+    click <- input$map_marker_click
+    plot_id <- click$id
+
+    if (plot_id %in% values$clicked_points) {
+      # Remove from selection if already clicked
+      values$clicked_points <- setdiff(values$clicked_points, plot_id)
+    } else {
+      # Add to selection
+      values$clicked_points <- c(values$clicked_points, plot_id)
+    }
+
+    # Update temp selection
+    if (length(values$clicked_points) > 0) {
+      values$temp_selected <- values$all_data[values$all_data$PlotID %in% values$clicked_points, ]
+    } else {
+      values$temp_selected <- data.frame()
+    }
+
+    # Update map highlighting
+    updateMapHighlighting()
+  })
+
+  # Handle rectangle selection from map
+  observeEvent(input$map_draw_new_feature, {
+    req(values$all_data)
+
+    tryCatch({
+      # Increment draw count to track rectangle creation
+      values$draw_count <- values$draw_count + 1
+
+      # Get the drawn rectangle
+      feature <- input$map_draw_new_feature
+
+      # Extract coordinates from the rectangle
+      coords <- unlist(feature$geometry$coordinates)
+      coords <- matrix(coords, ncol = 2, byrow = TRUE)
+
+      # Ensure the polygon is closed
+      if (!all(coords[1,] == coords[nrow(coords),])) {
+        coords <- rbind(coords, coords[1,])
+      }
+
+      # Create a polygon from the rectangle
+      poly <- st_polygon(list(coords)) %>%
+        st_sfc(crs = 4326)
+
+      # Convert data to spatial object
+      points_sf <- st_as_sf(values$all_data,
+                            coords = c("Longitude", "Latitude"),
+                            crs = 4326)
+
+      # Find points within the polygon
+      selected_points <- st_intersects(points_sf, poly, sparse = FALSE)
+
+      # Get the selected data
+      selected_data <- values$all_data[selected_points[, 1], ]
+
+      # Update clicked points with rectangle selection
+      if (nrow(selected_data) > 0) {
+        values$clicked_points <- unique(c(values$clicked_points, selected_data$PlotID))
+        values$temp_selected <- values$all_data[values$all_data$PlotID %in% values$clicked_points, ]
+      }
+
+      # Update map highlighting
+      updateMapHighlighting()
+
+      # Remove the drawn rectangle immediately after processing
+      leafletProxy("map") %>% removeDrawToolbar(clearFeatures = TRUE) %>%
+        addDrawToolbar(
+          targetGroup = 'draw',
+          polylineOptions = FALSE,
+          polygonOptions = FALSE,
+          circleOptions = FALSE,
+          markerOptions = FALSE,
+          circleMarkerOptions = FALSE,
+          rectangleOptions = list(
+            shapeOptions = list(
+              color = '#ff0000',
+              weight = 2,
+              fillOpacity = 0.3
+            ),
+            repeatMode = FALSE
+          ),
+          editOptions = FALSE
+        )
+
+    }, error = function(e) {
+      showNotification(paste("Error selecting points:", e$message), type = "error")
+    })
+  })
+
+  # Function to update map highlighting
+  updateMapHighlighting <- function() {
+    leafletProxy("map") %>% clearGroup("temp_selected")
+
+    if (length(values$clicked_points) > 0) {
+      selected_data <- values$all_data[values$all_data$PlotID %in% values$clicked_points, ]
+
+      if (nrow(selected_data) > 0) {
+        leafletProxy("map") %>%
+          addCircleMarkers(
+            data = selected_data,
+            lng = ~Longitude,
+            lat = ~Latitude,
+            group = "temp_selected",
+            radius = 8,
+            color = "red",
+            fillColor = "red",
+            fillOpacity = 1,
+            stroke = TRUE,
+            weight = 2
+          )
+      }
+    }
+  }
+
+  # Add selected points to the table
+  observeEvent(input$add_button, {
+    req(values$temp_selected)
+    req(nrow(values$temp_selected) > 0)
+
+    # Combine with existing selected data, avoiding duplicates
+    if (nrow(values$selected_data) == 0) {
+      values$selected_data <- values$temp_selected
+    } else {
+      # Remove duplicates by PlotID
+      new_points <- values$temp_selected[!values$temp_selected$PlotID %in%
+                                           values$selected_data$PlotID, ]
+      if (nrow(new_points) > 0) {
+        values$selected_data <- rbind(values$selected_data, new_points)
+      }
+    }
+
+    # Clear temporary selection
+    values$clicked_points <- character()
+    values$temp_selected <- data.frame()
+    leafletProxy("map") %>% clearGroup("temp_selected")
+
+    showNotification(paste("Added points to selection"), type = "message")
+  })
+
+  # Display selected data table
+  output$selected_table <- renderDT({
+    req(values$selected_data)
+    req(nrow(values$selected_data) > 0)
+
+    datatable(
+      values$selected_data,
+      selection = 'multiple',
+      options = list(
+        pageLength = 5,
+        scrollX = TRUE,
+        autoWidth = TRUE
+      )
+    )
+  })
+
+  # Drop selected rows from table
+  observeEvent(input$drop_button, {
+    req(input$selected_table_rows_selected)
+    req(nrow(values$selected_data) > 0)
+
+    if (length(input$selected_table_rows_selected) > 0) {
+      values$selected_data <- values$selected_data[-input$selected_table_rows_selected, ]
+
+      # If no rows left, reset to empty dataframe
+      if (nrow(values$selected_data) == 0) {
+        values$selected_data <- data.frame()
+      }
+    }
+  })
+
+  # Download handler - prevent scientific notation
+  output$download_button <- downloadHandler(
+    filename = function() {
+      paste("selected_points_", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      req(values$selected_data)
+      req(nrow(values$selected_data) > 0)
+
+      # Create output with only PlotID as requested, ensuring no scientific notation
+      output_data <- data.frame(PlotID = values$selected_data$PlotID)
+
+      # Write CSV without scientific notation and preserving character format
+      write.csv(output_data, file, row.names = FALSE, quote = FALSE)
+    }
+  )
+
+  # Enable/disable buttons based on state
+  observe({
+    toggleState("add_button", condition = !is.null(values$temp_selected) && nrow(values$temp_selected) > 0)
+    toggleState("drop_button", condition = !is.null(input$selected_table_rows_selected) &&
+                  length(input$selected_table_rows_selected) > 0 &&
+                  nrow(values$selected_data) > 0)
+    toggleState("download_button", condition = !is.null(values$selected_data) && nrow(values$selected_data) > 0)
+  })
+}
