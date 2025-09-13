@@ -30,6 +30,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Jingjing Liang \email{jjliang@purdue.edu}
   \item Desmond Mensah \email{dmensah@purdue.edu}
 }
 
