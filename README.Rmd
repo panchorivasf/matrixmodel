@@ -13,10 +13,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-# matrixmodel
+# matrixmodel <a href="https://panchorivasf.github.io/matrixmodel/"><img src="man/figures/logo.png" align="right" height="120" alt="matrixmodel website" /></a>
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The goal of the Indiana Forest Simulator (AKA matrixmodel) is to provide Indiana foresters with a tool to simulate forest stocks in the State into the future.
@@ -40,6 +39,4 @@ To start, you need to search for a CSV file in the 'matrix model' format and imp
 
 ```{r eval=FALSE}
 setwd("path/to/your/folder")
-
-
 ```

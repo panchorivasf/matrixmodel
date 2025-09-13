@@ -1,5 +1,7 @@
 url: https://panchorivasf.github.io/matrixmodel/
 template:
   bootstrap: 5
-  light-switch: true
+    light-switch: true
   bootswatch: minty
+
+

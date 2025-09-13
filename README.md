@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# matrixmodel
+# matrixmodel <a href="https://panchorivasf.github.io/matrixmodel/"><img src="man/figures/logo.png" align="right" height="120" alt="matrixmodel website" /></a>
 
 <!-- badges: start -->
 
