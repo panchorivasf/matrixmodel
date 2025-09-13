@@ -23,9 +23,9 @@ update_predictions <- function(pred_vec, m, u, r, DBH) {
 
   pred_vec <- pred_vec |> mutate(TPH_1 = TPH)
 
-  mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)), drop = FALSE])$predictions)
-  up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)), drop = FALSE])$predictions) / 5
-  rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)), drop = FALSE])$predictions)
+  mort <- as.numeric(ranger::predict(m, pred_vec[, intersect(req_m, names(pred_vec)), drop = FALSE])$predictions)
+  up   <- as.numeric(ranger::predict(u, pred_vec[, intersect(req_u, names(pred_vec)), drop = FALSE])$predictions) / 5
+  rec  <- as.numeric(ranger::predict(r, pred_vec[, intersect(req_r, names(pred_vec)), drop = FALSE])$predictions)
 
   up[is.na(up) | up < 0 | pred_vec$DGP >= 15] <- 0
   mort[is.na(mort) | mort < 0] <- 0

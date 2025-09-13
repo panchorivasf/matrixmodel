@@ -40,7 +40,8 @@ Imports:
     tidyr,
     shiny,
     shinyjs,
-    DT
+    DT,
+    ranger
 Suggests:
     knitr,
     rmarkdown,
