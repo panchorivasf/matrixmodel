@@ -7,6 +7,10 @@
 #' @param m_model Path to the mortality model '.rds' file.
 #' @param u_model Path to the upgrowth model '.rds' file.
 #' @param r_model Path to the recruitment model '.rds' file.
+#' @param output_folder_name Character. A name for the output folder to be
+#' created in the 'save_to' directory.
+#' @param n_cores Numeric. Number of cores to use in the parallel process.
+#' Default is -1 (all but one).
 #'
 #' @returns A list with data frames
 #' @export
@@ -21,6 +25,7 @@ project_biomass_batch <- function(save_to = NULL,
                                   m_model = "./models/model_mortality.rds",
                                   u_model = "./models/model_upgrowth.rds",
                                   r_model = "./models/model_recruitment1.rds",
+                                  output_folder_name = "simulation_results_batch",
                                   n_cores = -1) {
 
   if (n_cores == -1) {
@@ -32,7 +37,7 @@ project_biomass_batch <- function(save_to = NULL,
   }
 
   # Create main output directory
-  summary_output <- file.path(save_to, "simulation_output_batch")
+  summary_output <- file.path(save_to, output_folder_name)
   if (!dir.exists(summary_output)) {
     dir.create(summary_output, recursive = TRUE)
   }
@@ -112,17 +117,30 @@ project_biomass_batch <- function(save_to = NULL,
     foreach::registerDoSEQ()
   })
 
-  # Initialize empty lists to store results
-  all_predictions <- list()
-  all_summaries <- list()
-  all_summary_by_year <- list()
-  all_species_year <- list()
-  all_dgp_year <- list()
+  # Define DBH variable here so it can be exported to workers
+  DBH <- (seq(10, 80, 5)) + 2.5
+  DBH[15] <- 85
 
-  # Process plots in parallel
+  # Export all required functions, variables, and the DBH vector to parallel workers
+  parallel::clusterExport(cl, varlist = c(
+    "prepare_pred_vector", "update_predictions", "extract_outputs",
+    "summarize_predictions", "update_diversity", "DBH"
+  ), envir = environment())
+
+  # Also export the project_biomass function itself
+  parallel::clusterExport(cl, "project_biomass", envir = environment())
+
+  # Load required packages on each worker
+  parallel::clusterEvalQ(cl, {
+    library(dplyr)
+    library(tidyr)
+    # Add any other packages that biomass_projection depends on
+  })
+
+  # Process plots in parallel with detailed error reporting
   results <- foreach::foreach(
     i = 1:length(plot_list),
-    .packages = c("dplyr"),
+    .packages = c("dplyr", "tidyr"), # Packages needed for the processing
     .errorhandling = "pass"
   ) %dopar% {
     plot_data <- plot_list[[i]]
@@ -130,8 +148,8 @@ project_biomass_batch <- function(save_to = NULL,
 
     tryCatch({
       # Call the original function for this plot
-      result <- biomass_projection(
-        save_to = tempdir(),  # Save individual plots to temp dir
+      result <- project_biomass(
+        save_to = tempdir(),
         data = plot_data,
         plot_id = plot_id,
         years = years,
@@ -146,33 +164,47 @@ project_biomass_batch <- function(save_to = NULL,
         summary = result$summary,
         summary_by_year = result$summary_by_year,
         species_year = result$species_year,
-        dgp_year = result$dgp_year
+        dgp_year = result$dgp_year,
+        success = TRUE,
+        plot_id = plot_id
       )
 
     }, error = function(e) {
-      warning("Error processing plot ", plot_id, ": ", e$message)
-      return(NULL)
+      # Return detailed error information
+      list(
+        success = FALSE,
+        plot_id = plot_id,
+        error_message = e$message,
+        error_traceback = paste(capture.output(traceback()), collapse = "\n")
+      )
     })
   }
 
-  # Remove any NULL results from failed processing
-  valid_results <- !sapply(results, is.null)
-  if (any(!valid_results)) {
-    warning(sum(!valid_results), " plots failed to process")
-    results <- results[valid_results]
+  # Check which plots succeeded and which failed
+  successful_plots <- sapply(results, function(x) isTRUE(x$success))
+  failed_plots <- !successful_plots
+
+  if (any(failed_plots)) {
+    cat("Failed plots:\n")
+    for (i in which(failed_plots)) {
+      cat("Plot", results[[i]]$plot_id, "failed with error:", results[[i]]$error_message, "\n")
+    }
   }
 
-  if (length(results) == 0) {
-    stop("No plots were successfully processed")
+  if (sum(successful_plots) == 0) {
+    stop("No plots were successfully processed. Check the error messages above.")
   }
 
-  # Combine results manually
+  # Extract only successful results
+  successful_results <- results[successful_plots]
+
+  # Combine results
   combined_results <- list(
-    predictions = dplyr::bind_rows(lapply(results, function(x) x$predictions)),
-    summary = dplyr::bind_rows(lapply(results, function(x) x$summary)),
-    summary_by_year = dplyr::bind_rows(lapply(results, function(x) x$summary_by_year)),
-    species_year = dplyr::bind_rows(lapply(results, function(x) x$species_year)),
-    dgp_year = dplyr::bind_rows(lapply(results, function(x) x$dgp_year))
+    predictions = dplyr::bind_rows(lapply(successful_results, function(x) x$predictions)),
+    summary = dplyr::bind_rows(lapply(successful_results, function(x) x$summary)),
+    summary_by_year = dplyr::bind_rows(lapply(successful_results, function(x) x$summary_by_year)),
+    species_year = dplyr::bind_rows(lapply(successful_results, function(x) x$species_year)),
+    dgp_year = dplyr::bind_rows(lapply(successful_results, function(x) x$dgp_year))
   )
 
   # ---- Save combined outputs ----
@@ -203,7 +235,9 @@ project_biomass_batch <- function(save_to = NULL,
             file.path(summary_output, "all_plots_dgp_year_summary.csv"),
             row.names = FALSE)
 
-  cat("Batch processing completed. Outputs saved to:", summary_output, "\n")
+  cat("Batch processing completed. Successfully processed", sum(successful_plots),
+      "out of", length(plot_list), "plots\n")
+  cat("Outputs saved to:", summary_output, "\n")
 
   # Return combined results
   return(combined_results)

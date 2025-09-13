@@ -11,7 +11,8 @@ project_biomass(
   years = 50,
   m_model = "./models/model_mortality.rds",
   u_model = "./models/model_upgrowth.rds",
-  r_model = "./models/model_recruitment1.rds"
+  r_model = "./models/model_recruitment1.rds",
+  output_folder_name = "simulation_output"
 )
 }
 \arguments{

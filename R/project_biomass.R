@@ -16,176 +16,23 @@
 #' project_biomass(data = df, plot_id = "1234")
 #' }
 project_biomass <- function(save_to = NULL,
-                               data = NULL,
-                               plot_id = NULL,
-                               years = 50,
-                               m_model = "./models/model_mortality.rds",
-                               u_model = "./models/model_upgrowth.rds",
-                               r_model = "./models/model_recruitment1.rds") {
+                            data = NULL,
+                            plot_id = NULL,
+                            years = 50,
+                            m_model = "./models/model_mortality.rds",
+                            u_model = "./models/model_upgrowth.rds",
+                            r_model = "./models/model_recruitment1.rds",
+                            output_folder_name = "simulation_output") {
 
   if(is.null(save_to)){
     save_to <- getwd()
   }
 
   # Create main output directory
-  summary_output <- file.path(save_to, "simulation_output")
+  summary_output <- file.path(save_to, output_folder_name)
   if(!dir.exists(summary_output)) {
     dir.create(summary_output, recursive = TRUE)
   }
-
-  # ---- Helpers ----
-  # update_diversity <- function(pred_vec) {
-  #     dgp_div <- pred_vec |>
-  #       group_by(PlotID, DGP) |>
-  #       summarise(TPH_sum = sum(TPH), .groups = "drop") |>
-  #       group_by(PlotID) |>
-  #       mutate(
-  #         total = sum(TPH_sum),
-  #         p = if_else(total > 0, TPH_sum / total, 0),
-  #         Shannon_DGP = if_else(total > 0, -sum(p * log(pmax(p, 1e-10)),
-  #                                               na.rm = TRUE), 0),
-  #         Simpson_DGP = if_else(total > 0, sum(p^2, na.rm = TRUE), 0)
-  #       ) |>
-  #       select(PlotID, Shannon_DGP, Simpson_DGP) |> distinct()
-  #
-  #     spcd_div <- pred_vec |>
-  #       group_by(PlotID, SPCD) |>
-  #       summarise(TPH_sum = sum(TPH), .groups = "drop") |>
-  #       group_by(PlotID) |>
-  #       mutate(
-  #         p = TPH_sum / sum(TPH_sum),
-  #         Shannon_SPCD = -sum(p * log(p), na.rm = TRUE),
-  #         Simpson_SPCD = sum(p^2, na.rm = TRUE)
-  #       ) |>
-  #       select(PlotID, Shannon_SPCD, Simpson_SPCD) |> distinct()
-  #
-  #     pred_vec |>
-  #       select(-any_of(c("Shannon_DGP","Simpson_DGP",
-  #                        "Shannon_SPCD","Simpson_SPCD"))) |>
-  #       left_join(dgp_div, by = "PlotID") |>
-  #       left_join(spcd_div, by = "PlotID")
-  #   }
-
-  # prepare_pred_vector <- function(plt_vec, DBH) {
-  #   pred_vec <- plt_vec |>
-  #     pivot_longer(cols = matches("^S\\d{2}_D\\d{2}$"),
-  #                  names_to = "S_D", values_to = "TPH") |>
-  #     mutate(
-  #       SPCD    = as.integer(substr(S_D, 2, 3)),
-  #       DGP     = as.integer(substr(S_D, 6, 7)),
-  #       PrevDGP = DGP,
-  #       PrevDBH = DBH[pmin(DGP, length(DBH))]
-  #     ) |>
-  #     group_by(PlotID) |>
-  #     mutate(
-  #       BA_unit = pi * (PrevDBH^2) / 40000,
-  #       Hs      = n_distinct(SPCD[TPH > 0]),
-  #       Hd      = n_distinct(DGP[TPH > 0])
-  #     ) |>
-  #     ungroup()
-  #
-  #   pred_vec <- update_diversity(pred_vec)
-  #   pred_vec$Year <- 0L
-  #   pred_vec
-  # }
-
-  # update_predictions <- function(pred_vec, m, u, r, DBH) {
-  #   req_m <- m$forest$independent.variable.names
-  #   req_u <- u$forest$independent.variable.names
-  #   req_r <- r$forest$independent.variable.names
-  #
-  #   pred_vec <- pred_vec |> mutate(TPH_1 = TPH)
-  #
-  #   mort <- as.numeric(predict(m, pred_vec[, intersect(req_m, names(pred_vec)), drop = FALSE])$predictions)
-  #   up   <- as.numeric(predict(u, pred_vec[, intersect(req_u, names(pred_vec)), drop = FALSE])$predictions) / 5
-  #   rec  <- as.numeric(predict(r, pred_vec[, intersect(req_r, names(pred_vec)), drop = FALSE])$predictions)
-  #
-  #   up[is.na(up) | up < 0 | pred_vec$DGP >= 15] <- 0
-  #   mort[is.na(mort) | mort < 0] <- 0
-  #   mort[mort > 1] <- 1
-  #   rec[is.na(rec) | pred_vec$DGP != 1] <- 0
-  #
-  #   pred_vec <- pred_vec |>
-  #     mutate(
-  #       mort   = mort,
-  #       up     = up,
-  #       rec    = rec,
-  #       stasis = pmax(0, TPH_1 * (1 - mort - up))
-  #     ) |>
-  #     group_by(PlotID, SPCD) |>
-  #     arrange(DGP, .by_group = TRUE) |>
-  #     mutate(
-  #       moved_up = lag(TPH_1 * up, default = 0),
-  #       recruits = if_else(DGP == 1, rec, 0),
-  #       TPH      = stasis + moved_up + recruits
-  #     ) |>
-  #     ungroup()
-  #
-  #   pred_vec <- pred_vec |>
-  #     mutate(
-  #       CurrDBH = DBH[pmin(DGP, length(DBH))],
-  #       BA_unit = pi * (CurrDBH^2) / 40000,
-  #       B_row   = TPH * BA_unit,
-  #       N_row   = TPH,
-  #       rec_BA  = recruits * BA_unit,
-  #       up_BA   = pmax(0, moved_up - TPH_1 * up) * BA_unit,
-  #       mort_BA = TPH_1 * mort * BA_unit
-  #     )
-  #
-  #   pred_vec <- update_diversity(pred_vec)
-  #   pred_vec
-  # }
-
-  # extract_outputs <- function(pred_vec, sim_year) {
-  #   # Debug: check structure
-  #   # cat("Extracting outputs for year", sim_year, "- columns:",
-  #   #     paste(names(pred_vec), collapse = ", "), "\n")
-  #
-  #   result <- pred_vec |>
-  #     transmute(
-  #       PlotID, Year = sim_year, DGP, SPCD,
-  #       B = B_row, N = N_row,
-  #       rec_BA, up_BA, mort_BA,
-  #       Hd, Hs
-  #       # Shannon_DGP,
-  #       # Simpson_DGP,
-  #       # Shannon_SPCD,
-  #       # Simpson_SPCD
-  #     )
-  #
-  #   # Debug: check result
-  #   # cat("Extracted outputs have columns:", paste(names(result), collapse = ", "), "\n")
-  #   return(result)
-  # }
-  # Replace the summarize_predictions function with a more robust version:
-  # summarize_predictions <- function(df) {
-  #   # Debug: check what columns are available
-  #   # cat("Columns in summarize_predictions:", paste(names(df), collapse = ", "), "\n")
-  #
-  #   # Check if Year column exists
-  #   if (!"Year" %in% names(df)) {
-  #     stop("Year column missing in summarize_predictions. Available columns: ",
-  #          paste(names(df), collapse = ", "))
-  #   }
-  #
-  #   df |>
-  #     group_by(PlotID, Year) |>
-  #     summarise(
-  #       BA_total       = sum(B, na.rm = TRUE),
-  #       N_total        = sum(N, na.rm = TRUE),
-  #       # rec_BA_total   = sum(rec_BA,  na.rm = TRUE),
-  #       # up_BA_total    = sum(up_BA,   na.rm = TRUE),
-  #       # mort_BA_total  = sum(mort_BA, na.rm = TRUE),
-  #       # Hd             = first(Hd),
-  #       # Hs             = first(Hs),
-  #       # Shannon_DGP    = first(Shannon_DGP),
-  #       # Simpson_DGP    = first(Simpson_DGP),
-  #       # Shannon_SPCD   = first(Shannon_SPCD),
-  #       # Simpson_SPCD   = first(Simpson_SPCD),
-  #       .groups = "drop"
-  #     )
-  # }
-
 
   set.seed(1234)
 
@@ -221,26 +68,8 @@ project_biomass <- function(save_to = NULL,
   u <- readRDS(u_model)
   r <- readRDS(r_model)
 
-  # ---- DBH reference ----
-  # dbh_mean_all <- dbh_ref |>
-  #   group_by(DGP) |> summarise(DBH = median(DBH, na.rm = TRUE),
-  #                              .groups = "drop")
-  # dbh_mean_drc <- dbh_ref |>
-  #   filter(grepl("DRC", PlotID)) |>
-  #   group_by(DGP) |> summarise(DBH = median(DBH, na.rm = TRUE),
-  #                              .groups = "drop")
-  #
   DBH <- (seq(10, 80, 5)) + 2.5
   DBH[15] <- 85
-
-
-  # ref <- tibble(DGP = 1:15) |>
-  #   # left_join(dbh_mean_drc |> rename(DBH_drc = DBH), by = "DGP") |>
-  #   left_join(dbh_mean_all |> rename(DBH_all = DBH), by = "DGP") |>
-  #   mutate(DBH = coalesce(DBH_drc, DBH_all))
-  #
-  # all_dbh_vec <- ref$DBH_all
-  #  drc_dbh_vec <- ref$DBH
 
   # ---- Process single plot ----
   cat("Calculating projection for single plot...\n")
@@ -276,7 +105,6 @@ project_biomass <- function(save_to = NULL,
   pred_df <- pred_df |>
     select(PlotID, SpeciesGroup, SPCD, everything())
 
-  # print(pred_df)
 
   summary_df <- summarize_predictions(pred_df)
 
@@ -288,7 +116,7 @@ project_biomass <- function(save_to = NULL,
 
 
   summary_by_year <- summary_df |>
-    group_by(Year) |>
+    group_by(PlotID, Year) |>
     summarise(
       BA_total_mean      = mean(BA_total, na.rm = TRUE),
       # BA_total_sd        = sd(BA_total,   na.rm = TRUE),
@@ -319,7 +147,7 @@ project_biomass <- function(save_to = NULL,
             row.names = FALSE)
 
   species_year <- pred_df |>
-    group_by(SPCD, SpeciesGroup, Year) |>
+    group_by(PlotID, SPCD, SpeciesGroup, Year) |>
     summarise(
       BA_total     = sum(B, na.rm = TRUE),
       N_total      = sum(N, na.rm = TRUE),
@@ -336,7 +164,7 @@ project_biomass <- function(save_to = NULL,
 
 
   dgp_year <- pred_df |>
-    group_by(DGP, Year) |>
+    group_by(PlotID, DGP, Year) |>
     summarise(
       BA_total     = sum(B, na.rm = TRUE),
       N_total      = sum(N, na.rm = TRUE),

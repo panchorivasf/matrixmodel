@@ -11,6 +11,7 @@ project_biomass_batch(
   m_model = "./models/model_mortality.rds",
   u_model = "./models/model_upgrowth.rds",
   r_model = "./models/model_recruitment1.rds",
+  output_folder_name = "simulation_results_batch",
   n_cores = -1
 )
 }
@@ -27,6 +28,12 @@ or the path to a directory with multiple CSVs (individual plots).}
 \item{u_model}{Path to the upgrowth model '.rds' file.}
 
 \item{r_model}{Path to the recruitment model '.rds' file.}
+
+\item{output_folder_name}{Character. A name for the output folder to be
+created in the 'save_to' directory.}
+
+\item{n_cores}{Numeric. Number of cores to use in the parallel process.
+Default is -1 (all but one).}
 }
 \value{
 A list with data frames
