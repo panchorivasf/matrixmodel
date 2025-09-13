@@ -26,10 +26,3 @@ Once the package is installed, load it into `R` with:
 ``` r
 library(matrixmodel)
 ```
-
-To start, you need to search for a CSV file in the ‘matrix model’ format
-and import it into `R`:
-
-``` r
-setwd("path/to/your/folder")
-```
