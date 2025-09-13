@@ -39,7 +39,8 @@ Imports:
     magrittr,
     tidyr,
     shiny,
-    shinyjs
+    shinyjs,
+    DT
 Suggests:
     knitr,
     rmarkdown,

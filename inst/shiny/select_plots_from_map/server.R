@@ -238,7 +238,7 @@ server <- function(input, output, session) {
   })
 
   # Display selected data table
-  output$selected_table <- renderDT({
+  output$selected_table <- DT::renderDT({
     req(values$selected_data)
     req(nrow(values$selected_data) > 0)
 
