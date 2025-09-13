@@ -31,7 +31,8 @@ Imports:
     leaflet.extras,
     foreach,
     doParallel,
-    parallel
+    parallel,
+    ranger
 Suggests:
     knitr,
     rmarkdown,
