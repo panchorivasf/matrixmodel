@@ -13,16 +13,17 @@ knitr::opts_chunk$set(
 )
 ```
 
-# matrixmodel <a href="https://panchorivasf.github.io/matrixmodel/"><img src="man/figures/logo.png" align="right" height="120" alt="matrixmodel website" /></a>
+# matrixmodel <a href="https://panchorivasf.github.io/matrixmodel/"><img src="man/figures/logo.png" alt="matrixmodel website" align="right" height="120"/></a>
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
-The goal of the Indiana Forest Simulator (AKA matrixmodel) is to provide Indiana foresters with a tool to simulate forest stocks in the State into the future.
+The goal of the `matrixmodel` package is to provide tools to project forest stocks across Indiana. Using the matrix model format for tree plot surveys,
 
 ## Installation
 
-You can install the development version of matrixmodel from [GitHub](https://github.com/) by typing the following in the R console:
+You can install the development version of `matrixmodel` from [GitHub](https://github.com/) by typing the following in the R console:
 
 ``` r
 # install.packages("pak")
@@ -31,6 +32,6 @@ pak::pak("panchorivasf/matrixmodel")
 
 Once the package is installed, load it into `R` with:
 
-```{r example}
+```{r}
 library(matrixmodel)
 ```

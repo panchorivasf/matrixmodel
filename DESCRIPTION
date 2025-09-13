@@ -1,6 +1,6 @@
 Package: matrixmodel
 Type: Package
-Title: Runs the Matrix Model for Biomass 
+Title: Forest Biomass Projections with the Matrix Model
 Version: 0.1.0
 Authors@R: c(
     person(
@@ -38,7 +38,8 @@ Imports:
     magick,
     magrittr,
     tidyr,
-    shiny
+    shiny,
+    shinyjs
 Suggests:
     knitr,
     rmarkdown,
