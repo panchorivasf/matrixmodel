@@ -7,9 +7,10 @@
 
 <!-- badges: end -->
 
-The goal of the `matrixmodel` package is to provide tools to project
-forest stocks across Indiana. Using the matrix model format for tree
-plot surveys,
+The goal of the `matrixmodel` package is to provide tools to forecast
+forest stocks. The forecasting functions take data in the “matrix model”
+format for tree plot surveys, either CSV or R data frames, to compute
+simulations for each species group.
 
 ## Installation
 

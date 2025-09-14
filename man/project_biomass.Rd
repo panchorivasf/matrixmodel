@@ -18,7 +18,8 @@ project_biomass(
 \arguments{
 \item{save_to}{Path to output folder}
 
-\item{data}{A data frame or CSV file containing the input data in the matrix format.}
+\item{data}{A data frame or CSV file containing the input data in the
+"matrix model" format.}
 
 \item{plot_id}{Character. The identifier of the target plot.}
 

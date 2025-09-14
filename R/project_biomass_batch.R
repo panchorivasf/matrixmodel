@@ -54,7 +54,8 @@ project_biomass_batch <- function(save_to = NULL,
       # Split by PlotID into a list
       plot_list <- split(data_source, data_source$PlotID)
       return(plot_list)
-    } else if (is.list(data_source) && all(sapply(data_source, is.data.frame))) {
+    } else if (is.list(data_source) && all(sapply(data_source,
+                                                  is.data.frame))) {
       # List of data frames
       return(data_source)
     } else if (is.character(data_source) && file.exists(data_source) &&
@@ -82,17 +83,20 @@ project_biomass_batch <- function(save_to = NULL,
           # Assume each file contains data for one plot
           plot_id <- unique(plot_data$PlotID)
           if (length(plot_id) > 1) {
-            warning("File ", basename(file), " contains multiple PlotIDs. Using first one.")
+            warning("File ", basename(file), " contains multiple PlotIDs.
+                    Using first one.")
             plot_id <- plot_id[1]
           }
           plot_list[[as.character(plot_id)]] <- plot_data
         } else {
-          warning("File ", basename(file), " does not contain a PlotID column. Skipping.")
+          warning("File ", basename(file), " does not contain a PlotID
+                  column. Skipping.")
         }
       }
       return(plot_list)
     } else {
-      stop("Invalid data_source. Provide a data frame, list of data frames, a CSV file path, or a directory path.")
+      stop("Invalid data_source. Provide a data frame, list of data frames,
+           a CSV file path, or a directory path.")
     }
   }
 
@@ -123,7 +127,8 @@ project_biomass_batch <- function(save_to = NULL,
   DBH <- (seq(10, 80, 5)) + 2.5
   DBH[15] <- 85
 
-  # Export all required functions, variables, and the DBH vector to parallel workers
+  # Export all required functions, variables, and the DBH vector to
+  # parallel workers
   parallel::clusterExport(cl, varlist = c(
     "prepare_pred_vector", "update_predictions", "extract_outputs",
     "summarize_predictions", "update_diversity", "DBH"
@@ -142,7 +147,7 @@ project_biomass_batch <- function(save_to = NULL,
   # Process plots in parallel with detailed error reporting
   results <- foreach::foreach(
     i = 1:length(plot_list),
-    .packages = c("dplyr", "tidyr", "ranger", "stats"), # Packages needed for the processing
+    .packages = c("dplyr", "tidyr", "ranger", "stats"),
     .errorhandling = "pass"
   ) %dopar% {
     plot_data <- plot_list[[i]]

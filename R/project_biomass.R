@@ -1,7 +1,8 @@
 #' Project forest stocks over a plot file
 #'
 #' @param save_to Path to output folder
-#' @param data A data frame or CSV file containing the input data in the matrix format.
+#' @param data A data frame or CSV file containing the input data in the
+#' "matrix model" format.
 #' @param plot_id Character. The identifier of the target plot.
 #' @param years Numeric. Number of years to simulate.
 #' @param m_model Path to the mortality model '.rds' file.
@@ -60,7 +61,8 @@ project_biomass <- function(save_to = NULL,
     }
 
     if (nrow(t1) > 1) {
-      warning("Multiple plots found with specified plot_id(s). Using first plot only.")
+      warning("Multiple plots found with specified plot_id(s).
+              Using first plot only.")
       t1 <- t1[1, ]
     }
 
@@ -113,8 +115,14 @@ project_biomass <- function(save_to = NULL,
 
   # Save using actual PlotID
   safe_plot_id <- gsub("[^a-zA-Z0-9]", "_", actual_plot_id)
-  write.csv(pred_df, file.path(summary_output, paste0("plot_", safe_plot_id, "_predictions.csv")), row.names = FALSE)
-  write.csv(summary_df, file.path(summary_output, paste0("plot_", safe_plot_id, "_summary.csv")), row.names = FALSE)
+  write.csv(pred_df,
+            file.path(summary_output,
+                      paste0("plot_", safe_plot_id, "_predictions.csv")),
+            row.names = FALSE)
+  write.csv(summary_df,
+            file.path(summary_output,
+                      paste0("plot_", safe_plot_id, "_summary.csv")),
+            row.names = FALSE)
 
 
 
@@ -162,7 +170,8 @@ project_biomass <- function(save_to = NULL,
 
   write.csv(species_year,
             file.path(summary_output,
-                      paste0("plot_", safe_plot_id, "_sp_year_summary.csv")),
+                      paste0("plot_", safe_plot_id,
+                             "_sp_year_summary.csv")),
             row.names = FALSE)
 
 
@@ -179,7 +188,8 @@ project_biomass <- function(save_to = NULL,
 
   write.csv(dgp_year,
             file.path(summary_output,
-                      paste0("plot_", safe_plot_id, "_dgp_year_summary.csv")),
+                      paste0("plot_", safe_plot_id,
+                             "_dgp_year_summary.csv")),
             row.names = FALSE)
 
   cat("Finished processing plot:", actual_plot_id, "\n")
