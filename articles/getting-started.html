@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">matrixmodel</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,17 +76,129 @@
 
     
     
-<p>The Indiana Forest Simulator (alias ‘matrixmodel’) is an R package
-with tools to simulate forest stocks in the state of Indiana (USA) into
-the future. It takes files in the “matrix model” format to simulate
-basal area (m2/ha) and density (trees per hectare, TPH), returning
-several summary outputs. These outputs then can be used to generate
-interactive plots.</p>
+<p>The <code>matrixmodel</code> is an <code>R</code> package with tools
+to simulate forest stocks in the state of Indiana (USA) into the future.
+If provided with other model files (.rds), it can be used for other
+locations. The main function, <code><a href="../reference/project_biomass.html">project_biomass()</a></code>, takes
+files in the “matrix model” format to simulate basal area (m2/ha) and
+density (trees per hectare, TPH), returning several summary outputs.
+These outputs then can be used to generate interactive plots.</p>
 <p>To start, we are going to load the package into R:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#remotes::install_github("panchorivasf/matrixmodel")</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/panchorivasf/matrixmodel" class="external-link">matrixmodel</a></span><span class="op">)</span></span></code></pre></div>
-  </main>
+<code class="sourceCode R"><span><span class="co"># Install the package if needed:</span></span>
+<span><span class="co"># install.packages("pak")</span></span>
+<span><span class="co"># pak::pak("panchorivasf/matrixmodel")</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/panchorivasf/matrixmodel" class="external-link">matrixmodel</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     filter, lag</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span></code></pre></div>
+<div class="section level2">
+<h2 id="loading-your-data">Loading Your Data<a class="anchor" aria-label="anchor" href="#loading-your-data"></a>
+</h2>
+<p>For this example, we’ll use sample data. In practice, you would load
+your own forest plot data:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Set the working directory to the folder where your data is saved</span></span>
+<span><span class="co"># Replace with your own path:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"/path/to/your/data/directory"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Read your data into the R environment:</span></span>
+<span><span class="va">data_indiana</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"plotsT1.csv"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Inspect the data:</span></span>
+<span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">data_indiana</span><span class="op">)</span></span></code></pre></div>
+<p>For demonstration purposes, we’ll create some sample data that mimics
+the structure:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">stats</span><span class="op">)</span></span>
+<span><span class="co"># Sample data for demonstration</span></span>
+<span><span class="va">data_indiana</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  PlotID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Plot_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">50</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  Species <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Oak"</span>, <span class="st">"Maple"</span>, <span class="st">"Pine"</span>, <span class="st">"Birch"</span><span class="op">)</span>, <span class="fl">500</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  DBH <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">500</span>, mean <span class="op">=</span> <span class="fl">25</span>, sd <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  Height <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">500</span>, mean <span class="op">=</span> <span class="fl">20</span>, sd <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
+<span>  BasalArea <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">500</span>, mean <span class="op">=</span> <span class="fl">0.05</span>, sd <span class="op">=</span> <span class="fl">0.02</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Inspect the sample data:</span></span>
+<span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">data_indiana</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 500</span></span>
+<span><span class="co">#&gt; Columns: 5</span></span>
+<span><span class="co">#&gt; $ PlotID    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "Plot_1"<span style="color: #949494;">, </span>"Plot_1"<span style="color: #949494;">, </span>"Plot_1"<span style="color: #949494;">, </span>"Plot_1"<span style="color: #949494;">, </span>"Plot_1"<span style="color: #949494;">, </span>"Plot_1"<span style="color: #949494;">, </span>…</span></span>
+<span><span class="co">#&gt; $ Species   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "Oak"<span style="color: #949494;">, </span>"Pine"<span style="color: #949494;">, </span>"Birch"<span style="color: #949494;">, </span>"Pine"<span style="color: #949494;">, </span>"Oak"<span style="color: #949494;">, </span>"Maple"<span style="color: #949494;">, </span>"Pine"<span style="color: #949494;">, </span>"Pin…</span></span>
+<span><span class="co">#&gt; $ DBH       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 16.697857<span style="color: #949494;">, </span>19.964071<span style="color: #949494;">, </span>13.063588<span style="color: #949494;">, </span>17.482767<span style="color: #949494;">, </span>39.558414<span style="color: #949494;">, </span>16.71…</span></span>
+<span><span class="co">#&gt; $ Height    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 20.31959<span style="color: #949494;">, </span>15.40334<span style="color: #949494;">, </span>24.50668<span style="color: #949494;">, </span>16.01136<span style="color: #949494;">, </span>23.34111<span style="color: #949494;">, </span>20.77607<span style="color: #949494;">, </span>…</span></span>
+<span><span class="co">#&gt; $ BasalArea <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 0.08967025<span style="color: #949494;">, </span>0.01297243<span style="color: #949494;">, </span>0.03180424<span style="color: #949494;">, </span>0.01097120<span style="color: #949494;">, </span>0.03399447<span style="color: #949494;">, </span>…</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="subsetting-your-data">Subsetting Your Data<a class="anchor" aria-label="anchor" href="#subsetting-your-data"></a>
+</h2>
+<p>If you have many plots and want to work with a subset, you can select
+them programmatically:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Select the first 20 unique plots for a manageable dataset</span></span>
+<span><span class="va">plot_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data_indiana</span><span class="op">$</span><span class="va">PlotID</span><span class="op">)</span>, n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">data_sample</span> <span class="op">&lt;-</span> <span class="va">data_indiana</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">PlotID</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">plot_list</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># In practice, you might save this subset:</span></span>
+<span><span class="co"># write.csv(data_sample, "data_sample.csv", row.names = FALSE)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="interactive-plot-selection">Interactive Plot Selection<a class="anchor" aria-label="anchor" href="#interactive-plot-selection"></a>
+</h2>
+<p>The <code>matrixmodel</code> package includes Shiny applications for
+interactive data exploration. You can view available apps and launch
+them:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># View available apps</span></span>
+<span><span class="fu"><a href="../reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Launch the plot selection app</span></span>
+<span><span class="co"># Note: This requires an interactive R session</span></span>
+<span><span class="fu"><a href="../reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="st">"select"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Note:</strong> Interactive applications require an active R
+session and cannot be demonstrated in this vignette. Run the code above
+in your R console to use the interactive features.</p>
+</div>
+<div class="section level2">
+<h2 id="working-with-selected-data">Working with Selected Data<a class="anchor" aria-label="anchor" href="#working-with-selected-data"></a>
+</h2>
+<p>Once you have your data prepared (either through manual subsetting or
+interactive selection), you can proceed with the matrix model
+analysis:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Example of working with the prepared data</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of plots in sample:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data_sample</span><span class="op">$</span><span class="va">PlotID</span><span class="op">)</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of plots in sample: 20</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of trees:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data_sample</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of trees: 200</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Species represented:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data_sample</span><span class="op">$</span><span class="va">Species</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Species represented: Oak, Pine, Birch, Maple</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</h2>
+<p>With your data prepared, you can now use the main functions of the
+<code>matrixmodel</code> package:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Example workflow (requires actual model files)</span></span>
+<span><span class="co"># results &lt;- project_biomass(data = data_sample, </span></span>
+<span><span class="co">#                           model_file = "path/to/model.rds",</span></span>
+<span><span class="co">#                           years = 50)</span></span>
+<span><span class="co"># </span></span>
+<span><span class="co"># # Generate plots and summaries</span></span>
+<span><span class="co"># plot_results(results)</span></span></code></pre></div>
+<p>For more detailed examples and advanced usage, see the additional
+vignettes in this package.</p>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 
