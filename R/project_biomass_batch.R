@@ -142,7 +142,7 @@ project_biomass_batch <- function(save_to = NULL,
   # Process plots in parallel with detailed error reporting
   results <- foreach::foreach(
     i = 1:length(plot_list),
-    .packages = c("dplyr", "tidyr"), # Packages needed for the processing
+    .packages = c("dplyr", "tidyr", "ranger", "stats"), # Packages needed for the processing
     .errorhandling = "pass"
   ) %dopar% {
     plot_data <- plot_list[[i]]

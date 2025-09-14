@@ -1,5 +1,7 @@
 server <- function(input, output, session) {
 
+  options(shiny.maxRequestSize = (1000 * 1024 ^ 2))
+
   # Reactive values to store data
   values <- reactiveValues(
     all_data = NULL,
