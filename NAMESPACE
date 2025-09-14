@@ -3,6 +3,7 @@
 export(launch_app)
 export(list_csvs)
 export(make_gif)
+export(plot_means)
 export(project_biomass)
 export(project_biomass_batch)
 export(stacked_dgp_chart)
