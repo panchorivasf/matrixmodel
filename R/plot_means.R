@@ -17,8 +17,8 @@ plot_means <- function(df){
 
   plotmeans <- df |>
     dplyr::group_by(PlotID, Longitude, Latitude) |>
-    dplyr::summarise(PrevB = mean(PrevB),
-                     PrevN = mean(PrevN),
+    dplyr::summarise(BA = mean(PrevB),
+                     TPA = mean(PrevN),
                      Hs = mean(Hs),
                      Hd = mean(Hd))
 
