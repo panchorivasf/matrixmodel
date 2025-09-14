@@ -41,7 +41,8 @@ Imports:
     shiny,
     shinyjs,
     DT,
-    ranger
+    ranger,
+    shinythemes
 Suggests:
     knitr,
     rmarkdown,

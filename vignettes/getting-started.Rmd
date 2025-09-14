@@ -72,17 +72,13 @@ data_sample <- data_indiana |> filter(PlotID %in% plot_list)
 # write.csv(data_sample, "data_sample.csv", row.names = FALSE)
 ```
 
-## Interactive Plot Selection
+## Interactive Stand Selection
 
-The `matrixmodel` package includes Shiny applications for interactive data exploration. You can view available apps and launch them:
+The `matrixmodel` package includes Shiny applications for interactive data exploration. These apps are run as functions without passing any arguments, and you can tell them apart from other functions because they all start with the "`app_`" prefix. To select individual stands based on subjective criteria directly from an interactive map, you can use the `app_select_stand()` function:
 
 ```{r, eval=FALSE}
-# View available apps
-launch_app()
-
-# Launch the plot selection app
-# Note: This requires an interactive R session
-launch_app("select")
+# Launch the app for selecting stands from map
+app_select_stand()
 ```
 
 **Note:** Interactive applications require an active R session and cannot be demonstrated in this vignette. Run the code above in your R console to use the interactive features.
