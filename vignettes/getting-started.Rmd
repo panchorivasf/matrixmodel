@@ -1,0 +1,115 @@
+---
+title: "Getting started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+The `matrixmodel` is an `R` package with tools to simulate forest stocks in the state of Indiana (USA) into the future. If provided with other model files (.rds), it can be used for other locations. The main function, `project_biomass()`, takes files in the "matrix model" format to simulate basal area (m2/ha) and density (trees per hectare, TPH), returning several summary outputs. These outputs then can be used to generate interactive plots.
+
+To start, we are going to load the package into R:
+
+```{r setup}
+# Install the package if needed:
+# install.packages("pak")
+# pak::pak("panchorivasf/matrixmodel")
+library(matrixmodel)
+library(dplyr)
+```
+
+## Loading Your Data
+
+For this example, we'll use sample data. In practice, you would load your own forest plot data:
+
+```{r, eval=FALSE}
+# Set the working directory to the folder where your data is saved
+# Replace with your own path:
+setwd("/path/to/your/data/directory")
+
+# Read your data into the R environment:
+data_indiana <- read.csv("plotsT1.csv")
+
+# Inspect the data:
+glimpse(data_indiana)
+```
+
+For demonstration purposes, we'll create some sample data that mimics the structure:
+
+```{r}
+library(stats)
+# Sample data for demonstration
+data_indiana <- data.frame(
+  PlotID = rep(paste0("Plot_", 1:50), each = 10),
+  Species = sample(c("Oak", "Maple", "Pine", "Birch"), 500, replace = TRUE),
+  DBH = rnorm(500, mean = 25, sd = 10),
+  Height = rnorm(500, mean = 20, sd = 5),
+  BasalArea = rnorm(500, mean = 0.05, sd = 0.02)
+)
+
+# Inspect the sample data:
+glimpse(data_indiana)
+```
+
+## Subsetting Your Data
+
+If you have many plots and want to work with a subset, you can select them programmatically:
+
+```{r}
+# Select the first 20 unique plots for a manageable dataset
+plot_list <- head(unique(data_indiana$PlotID), n = 20)
+data_sample <- data_indiana |> filter(PlotID %in% plot_list)
+
+# In practice, you might save this subset:
+# write.csv(data_sample, "data_sample.csv", row.names = FALSE)
+```
+
+## Interactive Plot Selection
+
+The `matrixmodel` package includes Shiny applications for interactive data exploration. You can view available apps and launch them:
+
+```{r, eval=FALSE}
+# View available apps
+launch_app()
+
+# Launch the plot selection app
+# Note: This requires an interactive R session
+launch_app("select")
+```
+
+**Note:** Interactive applications require an active R session and cannot be demonstrated in this vignette. Run the code above in your R console to use the interactive features.
+
+## Working with Selected Data
+
+Once you have your data prepared (either through manual subsetting or interactive selection), you can proceed with the matrix model analysis:
+
+```{r}
+# Example of working with the prepared data
+cat("Number of plots in sample:", length(unique(data_sample$PlotID)), "\n")
+cat("Number of trees:", nrow(data_sample), "\n")
+cat("Species represented:", paste(unique(data_sample$Species), collapse = ", "), "\n")
+```
+
+## Next Steps
+
+With your data prepared, you can now use the main functions of the `matrixmodel` package:
+
+```{r, eval=FALSE}
+# Example workflow (requires actual model files)
+# results <- project_biomass(data = data_sample, 
+#                           model_file = "path/to/model.rds",
+#                           years = 50)
+# 
+# # Generate plots and summaries
+# plot_results(results)
+```
+
+For more detailed examples and advanced usage, see the additional vignettes in this package.
