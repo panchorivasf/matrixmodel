@@ -1,11 +1,11 @@
 # Add package references
 library(shiny)
-library(leaflet)
-library(DT)
 library(shinyjs)
-library(sf)
-library(leaflet.extras)
 library(shinythemes)
+library(sf)
+library(leaflet)
+library(leaflet.extras)
+library(DT)
 
 # UI definition
 point_selector_ui <- function() {
@@ -553,7 +553,8 @@ point_selector_server <- function(input, output, session) {
 
   # Display selected data table
   output$selected_table <- DT::renderDT({
-    req(values$selected_data)    req(nrow(values$selected_data) > 0)
+    req(values$selected_data)
+    req(nrow(values$selected_data) > 0)
 
     DT::datatable(
       values$selected_data,
