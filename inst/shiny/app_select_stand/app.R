@@ -8,7 +8,7 @@ library(leaflet.extras)
 library(DT)
 
 # UI definition
-point_selector_ui <- function() {
+stand_selector_ui <- function() {
   # Enhanced CSS for better table styling
   tags$head(
     tags$style(HTML("
@@ -119,7 +119,7 @@ point_selector_ui <- function() {
 }
 
 # Server logic
-point_selector_server <- function(input, output, session) {
+stand_selector_server <- function(input, output, session) {
 
   options(shiny.maxRequestSize = (1000 * 1024 ^ 2))
 
@@ -130,8 +130,16 @@ point_selector_server <- function(input, output, session) {
     temp_selected = data.frame(),
     draw_count = 0,
     clicked_points = character(),
-    color_palette = NULL
+    color_palette = NULL,
+    base_map_created = FALSE
   )
+
+  # Create the initial base map
+  output$map <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      setView(lng = -120, lat = 40, zoom = 5)  # Default view
+  })
 
   # Update the map creation function for better symbology
   updateMap <- function() {
@@ -144,7 +152,6 @@ point_selector_server <- function(input, output, session) {
       satellite = providers$Esri.WorldImagery,
       classic = providers$OpenStreetMap.Mapnik,
       topo = providers$OpenTopoMap
-      # terrain = providers$Stamen.Terrain
     )
 
     # Get the selected provider or use default
@@ -153,12 +160,27 @@ point_selector_server <- function(input, output, session) {
       selected_provider <- providers$OpenStreetMap.Mapnik  # default
     }
 
-    # Create map
-    map <- leaflet(data) %>%
-      addProviderTiles(selected_provider) %>%
-      setView(lng = mean(data$Longitude, na.rm = TRUE),
-              lat = mean(data$Latitude, na.rm = TRUE),
-              zoom = 10)
+    # Get current view state before updating
+    current_map <- leafletProxy("map")
+
+    # Use leafletProxy to update tiles without recreating the entire map
+    # or changing the view
+    leafletProxy("map") %>%
+      clearTiles() %>%
+      addProviderTiles(selected_provider)
+  }
+
+
+  # Function to update point symbology
+  updatePointSymbology <- function() {
+    req(values$all_data)
+
+    data <- values$all_data
+
+    # Clear existing markers and controls
+    leafletProxy("map") %>%
+      clearMarkers() %>%
+      clearControls()
 
     # Add circle markers with appropriate coloring
     if (input$symbology != "none") {
@@ -168,14 +190,15 @@ point_selector_server <- function(input, output, session) {
       if (is.numeric(var_data) && length(unique(var_data)) > 1) {
         # Use quantile-based breaks for better color distribution
         color_pal <- colorBin(
-          palette = "viridis",
+          palette = "inferno",
           domain = var_data,
-          bins = 7,  # Fixed number of bins
           pretty = FALSE
         )
 
-        map <- map %>%
+        # Add markers
+        leafletProxy("map") %>%
           addCircleMarkers(
+            data = data,
             lng = ~Longitude,
             lat = ~Latitude,
             layerId = ~PlotID,
@@ -201,24 +224,27 @@ point_selector_server <- function(input, output, session) {
               "<strong>Hd:</strong> ", round(Hd, digits = 1), "<br>",
               "<strong>", input$symbology, ":</strong> ", round(get(input$symbology), digits = 1)
             )
-          ) %>%
+          )
+
+        # Add legend separately with explicit values
+        leafletProxy("map") %>%
           addLegend(
             position = "bottomright",
             pal = color_pal,
-            values = ~get(input$symbology),
+            values = var_data,  # Use the actual data vector, not a formula
             title = input$symbology,
-            opacity = 1,
-            bins = 7
+            opacity = 1
           )
       } else {
         # Fallback to default if variable isn't suitable for coloring
-        map <- map %>%
+        leafletProxy("map") %>%
           addCircleMarkers(
+            data = data,
             lng = ~Longitude,
             lat = ~Latitude,
             layerId = ~PlotID,
             radius = 4,
-            color = "blue",
+            color = "orange",
             fillOpacity = 0.8,
             stroke = FALSE,
             label = ~paste(
@@ -231,15 +257,16 @@ point_selector_server <- function(input, output, session) {
           )
       }
     } else {
-      # Default blue markers
-      map <- map %>%
+      # Default orange markers
+      leafletProxy("map") %>%
         addCircleMarkers(
+          data = data,
           lng = ~Longitude,
           lat = ~Latitude,
           layerId = ~PlotID,
-          radius = 4,
-          color = "blue",
-          fillOpacity = 0.8,
+          radius = 2,
+          color = "orange",
+          fillOpacity = 0.9,
           stroke = FALSE,
           label = ~paste(
             "PlotID:", PlotID, "\n",
@@ -251,8 +278,9 @@ point_selector_server <- function(input, output, session) {
         )
     }
 
-    # Add draw toolbar
-    map <- map %>%
+    # Re-add draw toolbar
+    leafletProxy("map") %>%
+      removeDrawToolbar() %>%
       addDrawToolbar(
         targetGroup = 'draw',
         polylineOptions = FALSE,
@@ -278,7 +306,8 @@ point_selector_server <- function(input, output, session) {
         editOptions = FALSE
       )
 
-    output$map <- renderLeaflet(map)
+    # Update highlighting
+    updateMapHighlighting()
   }
 
   # Read uploaded CSV file
@@ -305,87 +334,30 @@ point_selector_server <- function(input, output, session) {
       values$clicked_points <- character()
       values$temp_selected <- data.frame()
 
-      # Create map
-      output$map <- renderLeaflet({
-        leaflet() %>%
-          addTiles() %>%
-          addCircleMarkers(
-            data = data,
-            lng = ~Longitude,
-            lat = ~Latitude,
-            layerId = ~PlotID,
-            radius = 4,
-            color = "blue",
-            fillOpacity = 0.8,
-            stroke = FALSE,
-            label = ~paste(
-              "PlotID:", PlotID, "\n",
-              "PrevB:", round(PrevB, digits = 1), "\n",
-              "PrevN:", round(PrevN, digits = 1), "\n",
-              "Hs:", round(Hs, digits = 1), "\n",
-              "Hd:", round(Hd, digits = 1)
-            ),
-            popup = ~paste0(
-              "<strong>PlotID:</strong> ", PlotID, "<br>",
-              "<strong>PrevB:</strong> ", round(PrevB, digits = 1), "<br>",
-              "<strong>PrevN:</strong> ", round(PrevN, digits = 1), "<br>",
-              "<strong>Hs:</strong> ", round(Hs, digits = 1), "<br>",
-              "<strong>Hd:</strong> ", round(Hd, digits = 1)
-            )
-          ) %>%
-          addDrawToolbar(
-            targetGroup = 'draw',
-            polylineOptions = FALSE,
-            polygonOptions = list(
-              shapeOptions = list(
-                color = '#ff0000',
-                weight = 2,
-                fillOpacity = 0.3
-              ),
-              repeatMode = FALSE
-            ),
-            circleOptions = FALSE,
-            markerOptions = FALSE,
-            circleMarkerOptions = FALSE,
-            rectangleOptions = list(
-              shapeOptions = list(
-                color = '#ff0000',
-                weight = 2,
-                fillOpacity = 0.3
-              ),
-              repeatMode = FALSE
-            ),
-            editOptions = FALSE
-          )
-      })
+      # Update map with new data
+      updatePointSymbology()
+
+      leafletProxy("map") %>%
+        setView(lng = mean(data$Longitude, na.rm = TRUE),
+                lat = mean(data$Latitude, na.rm = TRUE),
+                zoom = 10)
+      updateMap()
 
     }, error = function(e) {
       showNotification("Error reading file. Please check the format.", type = "error")
     })
   })
 
-
-  # Color palette observer
-  observe({
-    req(values$all_data)
-    req(input$symbology != "none")
-
-    var_data <- values$all_data[[input$symbology]]
-    if (!is.null(var_data) && is.numeric(var_data) && length(unique(var_data)) > 1) {
-      values$color_palette <- colorBin(
-        palette = "viridis",
-        domain = var_data,
-        bins = 7,
-        pretty = FALSE
-      )
-    } else {
-      values$color_palette <- NULL
-    }
-  })
-
+  # Update map when map style changes
   observeEvent(input$map.style, {
     req(values$all_data)
     updateMap()
+  })
+
+  # Update map when symbology changes
+  observeEvent(input$symbology, {
+    req(values$all_data)
+    updatePointSymbology()
   })
 
   # Function to update map highlighting
@@ -415,6 +387,7 @@ point_selector_server <- function(input, output, session) {
       }
     }
   }
+
   # Handle individual point clicks
   observeEvent(input$map_marker_click, {
     req(values$all_data)
@@ -442,12 +415,6 @@ point_selector_server <- function(input, output, session) {
 
     # Update map highlighting
     updateMapHighlighting()
-  })
-
-  # Update map when symbology changes
-  observeEvent(input$symbology, {
-    req(values$all_data)
-    updateMap()
   })
 
   # Handle rectangle selection from map
@@ -575,7 +542,8 @@ point_selector_server <- function(input, output, session) {
         target = 'row',
         backgroundColor = styleEqual(c(TRUE), c('#343a40')),
         color = 'white'
-      )
+      ) %>%
+      formatRound(columns = c('PrevB', 'PrevN'), digits = 2)
   })
 
   # Drop selected rows from table
@@ -637,4 +605,4 @@ point_selector_server <- function(input, output, session) {
 }
 
 # Run the application
-shinyApp(ui = point_selector_ui(), server = point_selector_server)
+shinyApp(ui = stand_selector_ui(), server = stand_selector_server)
