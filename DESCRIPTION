@@ -42,7 +42,9 @@ Imports:
     shinyjs,
     DT,
     ranger,
-    shinythemes
+    shinythemes,
+    shinydashboard,
+    shinyWidgets
 Suggests:
     knitr,
     rmarkdown,

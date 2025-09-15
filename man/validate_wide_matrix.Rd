@@ -7,19 +7,21 @@
 validate_wide_matrix(df)
 }
 \arguments{
-\item{df}{A data frame to validate. Expected to contain a 'PlotID' column and
-matrix columns with names following the pattern 'S##_D##' (e.g., S01_D01,
-S02_D15), where ## represents two-digit numbers.}
+\item{df}{A data frame to validate. Expected to contain a 'PlotID'
+column and matrix columns with names following the pattern 'S##_D##'
+(e.g., S01_D01, S02_D15), where ## represents two-digit numbers.}
 }
 \value{
-A character vector of error messages. If the data frame is valid,
-  returns an empty character vector (length 0). If validation fails, returns
-  a vector containing descriptive error messages for each issue found.
+A character vector of error messages. If the data frame is
+valid, returns an empty character vector (length 0). If validation
+fails, returns a vector containing descriptive error messages for each
+issue found.
 }
 \description{
-This function validates that a data frame conforms to the expected wide matrix
-format for forest inventory data. It checks for the presence of required columns
-and ensures matrix columns follow the expected naming convention and data types.
+This function validates that a data frame conforms to the expected wide
+matrix format for forest inventory data. It checks for the presence of
+required columns and ensures matrix columns follow the expected naming
+convention and data types.
 }
 \examples{
 # Valid data frame

@@ -13,6 +13,7 @@
 #' @param metric Character string specifying the metric to plot: "BA_total"
 #'  (basal area)
 #'   or "N_total" (tree density). Defaults to "BA_total".
+#' @param dark Logical. Whether to use a dark theme for the graph.
 #' @param save_html Logical indicating whether to save interactive HTML plot.
 #'   Defaults to FALSE.
 #'
@@ -21,14 +22,14 @@
 #' @examples
 #' \dontrun{
 #' # From data frame
-#' hm <- view_sp_trends_heatmap_interactive(plot_id = "P1", data = species_data)
+#' p <- view_sp_trends_heatmap_interactive(plot_id = "P1", data = species_data)
 #'
 #' # From file path
-#' hm <- view_sp_trends_heatmap_interactive(plot_id = "P1", data =
+#' p <- view_sp_trends_heatmap_interactive(plot_id = "P1", data =
 #' "plot_species_year_data.csv")
 #'
 #' # From directory with pattern matching
-#' hm <- view_sp_trends_heatmap_interactive(plot_id = "P1", save_to = "output",
+#' p <- view_sp_trends_heatmap_interactive(plot_id = "P1", save_to = "output",
 #'                                       data = "plot_species_year_.*\\.csv")
 #' }
 #'
@@ -43,6 +44,7 @@ view_sp_trends_heatmap <- function(plot_id,
                                  data = NULL,
                                  save_to = NULL,
                                  metric = c("basal", "density"),
+                                 dark = TRUE,
                                  save_html = FALSE) {
 
   metric <- match.arg(metric)
@@ -113,7 +115,7 @@ view_sp_trends_heatmap <- function(plot_id,
     }
 
     # Create interactive heatmap
-    hm <- plot_ly(df_plot,
+    p <- plot_ly(df_plot,
                   x = ~Year,
                   y = ~factor(SpeciesGroup),
                   z = ~.data[[metric_col]],
@@ -122,7 +124,7 @@ view_sp_trends_heatmap <- function(plot_id,
                   colorbar = list(title = metric_bar),
                   hoverinfo = "text",
                   text = ~glue("Species Group: {SpeciesGroup}<br>Year: {Year}<br>{metric_display}:
-                             {round(.data[[metric]], 2)}")) %>%
+                             {round(.data[[metric]], 2)}"))
       plotly::layout(title = list(
                        text = glue("{metric_display}<br><sub>PLOT: {plot_id}</sub>"),
                        x = 0,  # Left align
@@ -137,10 +139,10 @@ view_sp_trends_heatmap <- function(plot_id,
     if (save_html) {
       if (!is.null(save_to)) {
         filename <- glue("interactive_heatmap_{metric}_plot_{plot_id}.html")
-        saveWidget(hm, file.path(save_to, filename))
+        saveWidget(p, file.path(save_to, filename))
       } else {
         filename <- glue("interactive_heatmap_{metric}_plot_{plot_id}.html")
-        saveWidget(hm, file.path(getwd(), filename))
+        saveWidget(p, file.path(getwd(), filename))
       }
     }
 
@@ -173,37 +175,79 @@ view_sp_trends_heatmap <- function(plot_id,
     # }
 
     # Create interactive heatmap
-    hm <- plot_ly(df_plot,
-                  x = ~Year,
-                  y = ~factor(SpeciesGroup),
-                  z = ~.data[[metric_col]],
-                  type = "heatmap",
-                  colors = "viridis",
-                  colorbar = list(title = metric_bar),
-                  hoverinfo = "text",
-                  text = ~glue("Species Group: {SpeciesGroup}<br>Year: {Year}<br>{metric_display}:
-                             {round(.data[[metric_col]], 2)}")) %>%
-      plotly::layout(title = glue("{metric_display}"),
-                     xaxis = list(title = "Year"),
-                     yaxis = list(title = "Species Group"))
-                     # colorbar = list(title = list(text = metric_display)))
-                     # legend = list(title = list(text = glue("{metric_display}")))
+    p <- plot_ly(df_plot,
+                 x = ~Year,
+                 y = ~factor(SpeciesGroup),
+                 z = ~.data[[metric_col]],
+                 type = "heatmap",
+                 colors = "viridis",
+                 colorbar = list(title = metric_bar),
+                 hoverinfo = "text",
+                 text = ~glue("Species Group: {SpeciesGroup}<br>Year: {Year}<br>{metric_display}:
+                             {round(.data[[metric_col]], 2)}"))
+
+    if (dark) {
+
+      p <- p %>%
+        plotly::layout(title = glue("{metric_display}"),
+                       xaxis = list(title = "Year"),
+                       yaxis = list(title = "Species Group"),
+
+      margin = list(l = 80, r = 80, t = 80, b = 80),
+      plot_bgcolor = "#1a2530",      # Dark background for plotting area
+      paper_bgcolor = "#2d3e50",     # Slightly lighter dark background for outer area
+      yaxis = list(
+        title = metric_display,
+        color = "white",             # White axis text
+        gridcolor = "#4a6572",       # Dark gray grid lines
+        zerolinecolor = "#4a6572",   # Dark gray zero line
+        linecolor = "white",         # White axis line
+        tickfont = list(color = "white")  # White tick labels
+      ),
+      xaxis = list(
+        title = "Year",
+        color = "white",             # White axis text
+        gridcolor = "#4a6572",       # Dark gray grid lines
+        zerolinecolor = "#4a6572",   # Dark gray zero line
+        linecolor = "white",         # White axis line
+        tickfont = list(color = "white")  # White tick labels
+      ),
+      showlegend = TRUE,
+      legend = list(
+        title = list(text = "Species Group", font = list(color = "white")),
+        font = list(color = "white")  # White legend text
+      ),
+      font = list(color = "white")    # Global white font for any other text
+        )
+
+    } else {
+
+      p <- p %>%
+        plotly::layout(title = glue("{metric_display}"),
+                       xaxis = list(title = "Year"),
+                       yaxis = list(title = "Species Group"))
+      # colorbar = list(title = list(text = metric_display)))
+      # legend = list(title = list(text = glue("{metric_display}")))
       # )
-# layout(legend = list(title = list(text = paste('<b>', title, '</b>'))))
+      # layout(legend = list(title = list(text = paste('<b>', title, '</b>'))))
+
+
+
+    }
 
 
     if (save_html) {
       if (!is.null(save_to)) {
         filename <- glue("interactive_heatmap_{metric}.html")
-        saveWidget(hm, file.path(save_to, filename))
+        saveWidget(p, file.path(save_to, filename))
       } else {
         filename <- glue("interactive_heatmap_{metric}.html")
-        saveWidget(hm, file.path(getwd(), filename))
+        saveWidget(p, file.path(getwd(), filename))
       }
     }
 
   }
 
-    hm
+    p
 
 }

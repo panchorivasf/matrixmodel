@@ -1,4 +1,3 @@
-# Add package references
 library(shiny)
 library(shinyjs)
 library(shinythemes)

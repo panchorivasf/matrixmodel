@@ -10,6 +10,7 @@ view_sp_trends_line(
   save_to = NULL,
   metric = c("basal", "density"),
   top_n = 9,
+  dark = TRUE,
   save_html = FALSE
 )
 }
@@ -26,6 +27,8 @@ If character, uses `latest_file()` to find the most recent matching file.}
 or "density". Defaults to "basal".}
 
 \item{top_n}{Integer specifying number of top species to display. Defaults to 9.}
+
+\item{dark}{Logical. Whether to use a dark theme for the graph.}
 
 \item{save_html}{Logical indicating whether to save interactive HTML plot.
 Defaults to FALSE.}

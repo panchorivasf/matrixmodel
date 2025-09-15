@@ -9,6 +9,7 @@ view_sp_trends_heatmap(
   data = NULL,
   save_to = NULL,
   metric = c("basal", "density"),
+  dark = TRUE,
   save_html = FALSE
 )
 }
@@ -26,6 +27,8 @@ path/pattern.
 (basal area)
  or "N_total" (tree density). Defaults to "BA_total".}
 
+\item{dark}{Logical. Whether to use a dark theme for the graph.}
+
 \item{save_html}{Logical indicating whether to save interactive HTML plot.
 Defaults to FALSE.}
 }
@@ -40,14 +43,14 @@ frame or file path.
 \examples{
 \dontrun{
 # From data frame
-hm <- view_sp_trends_heatmap_interactive(plot_id = "P1", data = species_data)
+p <- view_sp_trends_heatmap_interactive(plot_id = "P1", data = species_data)
 
 # From file path
-hm <- view_sp_trends_heatmap_interactive(plot_id = "P1", data =
+p <- view_sp_trends_heatmap_interactive(plot_id = "P1", data =
 "plot_species_year_data.csv")
 
 # From directory with pattern matching
-hm <- view_sp_trends_heatmap_interactive(plot_id = "P1", save_to = "output",
+p <- view_sp_trends_heatmap_interactive(plot_id = "P1", save_to = "output",
                                       data = "plot_species_year_.*\\\\.csv")
 }
 

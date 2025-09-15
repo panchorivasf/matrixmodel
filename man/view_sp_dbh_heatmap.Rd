@@ -2,21 +2,24 @@
 % Please edit documentation in R/view_sp_dbh_heatmap.R
 \name{view_sp_dbh_heatmap}
 \alias{view_sp_dbh_heatmap}
-\title{Create interactive faceted heatmap grid of species by DGP}
+\title{Create interactive heatmap of species by DGP for a single year}
 \usage{
 view_sp_dbh_heatmap(
-  plot_id,
+  plot_id = NULL,
   year = 50,
   data = NULL,
   save_to = NULL,
   metric = c("basal", "density"),
+  whole_range = FALSE,
+  dark = TRUE,
   save_html = FALSE
 )
 }
 \arguments{
-\item{plot_id}{Character or numeric identifier for the plot to visualize}
+\item{plot_id}{Character or numeric identifier for the plot to visualize.
+If NULL, aggregates data across all plots.}
 
-\item{year}{Numeric vector of year to include in the faceted grid}
+\item{year}{Numeric value for the year to visualize}
 
 \item{data}{Either a data frame or character string specifying file path/pattern.
 If character, uses `latest_file()` to find the most recent matching file.}
@@ -24,30 +27,34 @@ If character, uses `latest_file()` to find the most recent matching file.}
 \item{save_to}{Character string specifying directory path to search for files
 (only used if `data` is a character string).}
 
-\item{metric}{Character string specifying the metric to plot: "BA_total" (basal area)
-or "N_total" (tree density). Defaults to "BA_total".}
+\item{metric}{Character string specifying the metric to plot: "basal" (basal area)
+or "density" (tree density). Defaults to "basal".}
+
+\item{whole_range}{Logical. Whether to use the whole range of values
+for the metric across all years available.}
+
+\item{dark}{Logical. Whether to use a dark theme for the graph.}
 
 \item{save_html}{Logical indicating whether to save interactive HTML plot.
 Defaults to FALSE.}
 }
 \value{
-A plotly subplot grid showing species by DGP heatmaps for a year
+A plotly heatmap showing species by DGP for the specified year
 }
 \description{
-Generates an interactive grid of heatmaps showing species-level metrics by DGP
-across multiple year for a specific plot.
+Generates an interactive heatmap showing species-level metrics by DGP
+for a specific year and plot, with fixed scale based on all years in dataset.
 }
 \examples{
 \dontrun{
-# From data frame
-grid <- view_sp_dbh_heatmap(plot_id = "P1", year = c(0, 50, 100), data = spcd_dgp_data)
+# From data frame for specific plot
+plot <- view_sp_dbh_heatmap(plot_id = "P1", year = 50, data = spcd_dgp_data)
+
+# From data frame for all plots
+plot <- view_sp_dbh_heatmap(plot_id = NULL, year = 50, data = spcd_dgp_data)
 
 # From file path
-grid <- view_sp_dbh_heatmap(plot_id = "P1", data = "plot_spcd_dgp_year_data.csv")
-
-# From directory with pattern matching
-grid <- view_sp_dbh_heatmap(plot_id = "P1", save_to = "output",
-                        data = "plot_spcd_dgp_year_.*\\\\.csv")
+plot <- view_sp_dbh_heatmap(plot_id = "P1", year = 50, data = "plot_spcd_dgp_year_data.csv")
 }
 
 }

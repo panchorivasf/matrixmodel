@@ -20,7 +20,7 @@ using a rectangle selection tool.
 }
 \examples{
 \dontrun{
-launch_point_selector()
+app_select_stand()
 }
 
 }

@@ -11,6 +11,7 @@
 #' @param metric Character string specifying the metric to plot: "basal",
 #'   or "density". Defaults to "basal".
 #' @param top_n Integer specifying number of top species to display. Defaults to 9.
+#' @param dark Logical. Whether to use a dark theme for the graph.
 #' @param save_html Logical indicating whether to save interactive HTML plot.
 #'   Defaults to FALSE.
 #'
@@ -42,6 +43,7 @@ view_sp_trends_line <- function(plot_id = NULL,
                                 save_to = NULL,
                                 metric = c("basal", "density"),
                                 top_n = 9,
+                                dark = TRUE,
                                 save_html = FALSE) {
 
   metric <- match.arg(metric)
@@ -182,18 +184,66 @@ view_sp_trends_line <- function(plot_id = NULL,
     # Create interactive plot
     p <- plot_ly(dplot, x = ~Year, y = ~.data[[metric_col]],
                  color = ~factor(SpeciesGroup),
+                 colors = "Set3",
                  type = 'scatter', mode = 'lines',
                  line = list(width = 2), hoverinfo = 'text',
-                 text = ~glue("Species: {SpeciesGroup}<br>Year: {Year}<br>{metric_display}: {round(.data[[metric_col]], 2)}")) %>%
+                 text = ~glue("Species: {SpeciesGroup}<br>Year: {Year}<br>{metric_display}: {round(.data[[metric_col]], 2)}"))
+
+
+
+  if (dark) {
+
+    p <- p %>%
+      plotly::layout(
+        title = list(
+          text = glue("{metric_display} (All plots)"),
+          x = 0,  # Left align
+          xref = "paper",
+          font = list(color = "white")  # White title
+        ),
+        margin = list(l = 80, r = 80, t = 80, b = 80),
+        plot_bgcolor = "#1a2530",      # Dark background for plotting area
+        paper_bgcolor = "#2d3e50",     # Slightly lighter dark background for outer area
+        yaxis = list(
+          title = metric_display,
+          color = "white",             # White axis text
+          gridcolor = "#4a6572",       # Dark gray grid lines
+          zerolinecolor = "#4a6572",   # Dark gray zero line
+          linecolor = "white",         # White axis line
+          tickfont = list(color = "white")  # White tick labels
+        ),
+        xaxis = list(
+          title = "Year",
+          color = "white",             # White axis text
+          gridcolor = "#4a6572",       # Dark gray grid lines
+          zerolinecolor = "#4a6572",   # Dark gray zero line
+          linecolor = "white",         # White axis line
+          tickfont = list(color = "white")  # White tick labels
+        ),
+        showlegend = TRUE,
+        legend = list(
+          title = list(text = "Species Group", font = list(color = "white")),
+          font = list(color = "white")  # White legend text
+        ),
+        font = list(color = "white")    # Global white font for any other text
+      )
+
+  } else {
+
+    p <- p %>%
       plotly::layout(title = list(
         text = glue("{metric_display} (All plots)"),
         x = 0,  # Left align
-        xref = "paper"
-      ),
-      yaxis = list(title = metric_display),
-      xaxis = list(title = "Year"),
-      showlegend = TRUE,
-      legend = list(title = list(text = "Species Group")))
+        xref = "paper"),
+        margin = list(l = 80, r = 80, t = 80, b = 80),
+        yaxis = list(title = metric_display),
+        xaxis = list(title = "Year"),
+        showlegend = TRUE,
+        legend = list(title = list(text = "Species Group"))
+      )
+
+    }
+
 
     if (save_html) {
       if (!is.null(save_to)) {
