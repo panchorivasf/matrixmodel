@@ -438,7 +438,7 @@ server <- function(input, output, session) {
     }
     valueBox(
       value = ba_val,
-      subtitle = "Final Basal Area (m²/ha)",
+      subtitle = "Final Basal Area (m2/ha)",
       icon = icon("chart-line"),
       color = "yellow"
     )
