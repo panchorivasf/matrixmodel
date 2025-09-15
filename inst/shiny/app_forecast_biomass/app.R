@@ -500,7 +500,7 @@ server <- function(input, output, session) {
   output$time_series_plot <- renderPlotly({
     req(values$results)
 
-    y_title <- if (input$plot_metric == "BA_total_mean") "Basal Area (m²/ha)" else "Tree Density (trees/ha)"
+    y_title <- if (input$plot_metric == "BA_total_mean") "Basal Area (m2/ha)" else "Tree Density (trees/ha)"
 
     p <- plot_ly(values$results$summary_by_year,
                  x = ~Year,
