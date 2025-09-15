@@ -9,6 +9,63 @@ library(shinythemes)
 
 # UI definition
 point_selector_ui <- function() {
+  # Enhanced CSS for better table styling
+  tags$head(
+    tags$style(HTML("
+    /* Target only the selected_table DataTable */
+    #selected_table .dataTables_wrapper table.dataTable {
+      width: 100% !important;
+    }
+    #selected_table .dataTables_wrapper table.dataTable thead th {
+      background-color: #2d3e50 !important;
+      color: white !important;
+      border-bottom: 2px solid #dee2e6 !important;
+    }
+    #selected_table .dataTables_wrapper table.dataTable tbody td {
+      background-color: #2d3e50 !important;
+      color: white !important;
+      border-color: #454d55 !important;
+    }
+    #selected_table .dataTables_wrapper table.dataTable tbody tr:hover td {
+      background-color: #1a2530 !important;
+      color: white !important;
+    }
+    /* Selected rows styling */
+    #selected_table .dataTables_wrapper table.dataTable tbody tr.selected td {
+      background-color: #3498db !important;
+      color: white !important;
+    }
+    /* DataTables controls styling - only for selected_table */
+    #selected_table .dataTables_wrapper .dataTables_paginate .paginate_button {
+      color: white !important;
+      background: none !important;
+      border: 1px solid #454d55 !important;
+    }
+    #selected_table .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+      background-color: #1a2530 !important;
+      color: white !important;
+    }
+    #selected_table .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+      background-color: #3498db !important;
+      color: white !important;
+      border-color: #3498db !important;
+    }
+    #selected_table .dataTables_wrapper .dataTables_info {
+      color: white !important;
+    }
+    #selected_table .dataTables_wrapper .dataTables_length label,
+    #selected_table .dataTables_wrapper .dataTables_filter label {
+      color: white !important;
+    }
+    #selected_table .dataTables_wrapper .dataTables_length select,
+    #selected_table .dataTables_wrapper .dataTables_filter input {
+      background-color: #454d55 !important;
+      color: white !important;
+      border: 1px solid #6c757d !important;
+    }
+  "))
+  )
+
   fluidPage(
     theme = shinythemes::shinytheme("darkly"),
     shinyjs::useShinyjs(),
@@ -18,6 +75,15 @@ point_selector_ui <- function() {
       shiny::sidebarPanel(
         width = 3,
         shiny::fileInput("file", "Upload CSV File", accept = c(".csv")),
+
+        shiny::selectInput("map.style", "Map Style:",
+                           choices = c(
+                             "Classic" = "classic",
+                             "Dark" = "dark",
+                             "Satellite" = "satellite",
+                             "Topographic" = "topo"
+                           ),
+                           selected = "classic"),
 
         # Symbology toggle
         shiny::radioButtons("symbology", "Color Points By:",
@@ -67,124 +133,29 @@ point_selector_server <- function(input, output, session) {
     color_palette = NULL
   )
 
-
-  # Read uploaded CSV file
-  observeEvent(input$file, {
-    req(input$file)
-
-    tryCatch({
-      data <- read.csv(input$file$datapath)
-
-      # Check if required columns exist
-      required_cols <- c("Latitude", "Longitude", "PrevB", "PrevN", "Hs", "Hd", "PlotID")
-      missing_cols <- setdiff(required_cols, colnames(data))
-
-      if (length(missing_cols) > 0) {
-        showNotification(paste("Missing columns:", paste(missing_cols, collapse = ", ")),
-                         type = "error")
-        return()
-      }
-
-      # Convert PlotID to character to avoid scientific notation
-      data$PlotID <- as.character(data$PlotID)
-
-      values$all_data <- data
-      values$clicked_points <- character()
-      values$temp_selected <- data.frame()
-
-      # Update map with new data
-      updateMap()
-
-    }, error = function(e) {
-      showNotification("Error reading file. Please check the format.", type = "error")
-    })
-  })
-
-
-  # Color palette observer
-  observe({
-    req(values$all_data)
-    req(input$symbology != "none")
-
-    var_data <- values$all_data[[input$symbology]]
-    if (!is.null(var_data) && is.numeric(var_data) && length(unique(var_data)) > 1) {
-      values$color_palette <- colorBin(
-        palette = "viridis",
-        domain = var_data,
-        bins = 7,
-        pretty = FALSE
-      )
-    } else {
-      values$color_palette <- NULL
-    }
-  })
-
-  # Handle individual point clicks
-  observeEvent(input$map_marker_click, {
-    req(values$all_data)
-
-    click <- input$map_marker_click
-    plot_id <- click$id
-
-    # Remove the "highlight_" prefix if it exists (from previous selections)
-    plot_id <- gsub("^highlight_", "", plot_id)
-
-    if (plot_id %in% values$clicked_points) {
-      # Remove from selection if already clicked
-      values$clicked_points <- setdiff(values$clicked_points, plot_id)
-    } else {
-      # Add to selection
-      values$clicked_points <- c(values$clicked_points, plot_id)
-    }
-
-    # Update temp selection
-    if (length(values$clicked_points) > 0) {
-      values$temp_selected <- values$all_data[values$all_data$PlotID %in% values$clicked_points, ]
-    } else {
-      values$temp_selected <- data.frame()
-    }
-
-    # Update map highlighting
-    updateMapHighlighting()
-  })
-
-  # Function to update map highlighting
-  updateMapHighlighting <- function() {
-    # Clear previous highlights using a safe approach
-    leafletProxy("map") %>% clearGroup("temp_selected")
-
-    if (length(values$clicked_points) > 0 && !is.null(values$all_data)) {
-      selected_data <- values$all_data[values$all_data$PlotID %in% values$clicked_points, ]
-
-      if (nrow(selected_data) > 0) {
-        # Add highlights with a different group to avoid conflicts
-        leafletProxy("map") %>%
-          addCircleMarkers(
-            data = selected_data,
-            lng = ~Longitude,
-            lat = ~Latitude,
-            group = "temp_selected",
-            radius = 10,  # Larger radius for better visibility
-            color = "#FF0000",
-            fillColor = "#FF0000",
-            fillOpacity = 0.9,
-            stroke = TRUE,
-            weight = 3,
-            layerId = ~paste0("highlight_", PlotID)
-          )
-      }
-    }
-  }
-
   # Update the map creation function for better symbology
   updateMap <- function() {
     req(values$all_data)
 
     data <- values$all_data
+    # Define tile providers
+    tile_providers <- list(
+      dark = providers$CartoDB.DarkMatter,
+      satellite = providers$Esri.WorldImagery,
+      classic = providers$OpenStreetMap.Mapnik,
+      topo = providers$OpenTopoMap
+      # terrain = providers$Stamen.Terrain
+    )
 
-    # Create base map with dark tiles
+    # Get the selected provider or use default
+    selected_provider <- tile_providers[[input$map.style]]
+    if (is.null(selected_provider)) {
+      selected_provider <- providers$OpenStreetMap.Mapnik  # default
+    }
+
+    # Create map
     map <- leaflet(data) %>%
-      addProviderTiles(providers$CartoDB.DarkMatter) %>%
+      addProviderTiles(selected_provider) %>%
       setView(lng = mean(data$Longitude, na.rm = TRUE),
               lat = mean(data$Latitude, na.rm = TRUE),
               zoom = 10)
@@ -208,7 +179,7 @@ point_selector_server <- function(input, output, session) {
             lng = ~Longitude,
             lat = ~Latitude,
             layerId = ~PlotID,
-            radius = 6,
+            radius = 4,
             color = ~color_pal(get(input$symbology)),
             fillColor = ~color_pal(get(input$symbology)),
             fillOpacity = 0.8,
@@ -246,7 +217,7 @@ point_selector_server <- function(input, output, session) {
             lng = ~Longitude,
             lat = ~Latitude,
             layerId = ~PlotID,
-            radius = 6,
+            radius = 4,
             color = "blue",
             fillOpacity = 0.8,
             stroke = FALSE,
@@ -266,7 +237,7 @@ point_selector_server <- function(input, output, session) {
           lng = ~Longitude,
           lat = ~Latitude,
           layerId = ~PlotID,
-          radius = 6,
+          radius = 4,
           color = "blue",
           fillOpacity = 0.8,
           stroke = FALSE,
@@ -285,7 +256,14 @@ point_selector_server <- function(input, output, session) {
       addDrawToolbar(
         targetGroup = 'draw',
         polylineOptions = FALSE,
-        polygonOptions = FALSE,
+        polygonOptions = list(
+          shapeOptions = list(
+            color = '#ff0000',
+            weight = 2,
+            fillOpacity = 0.3
+          ),
+          repeatMode = FALSE
+        ),
         circleOptions = FALSE,
         markerOptions = FALSE,
         circleMarkerOptions = FALSE,
@@ -302,6 +280,169 @@ point_selector_server <- function(input, output, session) {
 
     output$map <- renderLeaflet(map)
   }
+
+  # Read uploaded CSV file
+  observeEvent(input$file, {
+    req(input$file)
+
+    tryCatch({
+      data <- read.csv(input$file$datapath)
+
+      # Check if required columns exist
+      required_cols <- c("Latitude", "Longitude", "PrevB", "PrevN", "Hs", "Hd", "PlotID")
+      missing_cols <- setdiff(required_cols, colnames(data))
+
+      if (length(missing_cols) > 0) {
+        showNotification(paste("Missing columns:", paste(missing_cols, collapse = ", ")),
+                         type = "error")
+        return()
+      }
+
+      # Convert PlotID to character to avoid scientific notation
+      data$PlotID <- as.character(data$PlotID)
+
+      values$all_data <- data
+      values$clicked_points <- character()
+      values$temp_selected <- data.frame()
+
+      # Create map
+      output$map <- renderLeaflet({
+        leaflet() %>%
+          addTiles() %>%
+          addCircleMarkers(
+            data = data,
+            lng = ~Longitude,
+            lat = ~Latitude,
+            layerId = ~PlotID,
+            radius = 4,
+            color = "blue",
+            fillOpacity = 0.8,
+            stroke = FALSE,
+            label = ~paste(
+              "PlotID:", PlotID, "\n",
+              "PrevB:", round(PrevB, digits = 1), "\n",
+              "PrevN:", round(PrevN, digits = 1), "\n",
+              "Hs:", round(Hs, digits = 1), "\n",
+              "Hd:", round(Hd, digits = 1)
+            ),
+            popup = ~paste0(
+              "<strong>PlotID:</strong> ", PlotID, "<br>",
+              "<strong>PrevB:</strong> ", round(PrevB, digits = 1), "<br>",
+              "<strong>PrevN:</strong> ", round(PrevN, digits = 1), "<br>",
+              "<strong>Hs:</strong> ", round(Hs, digits = 1), "<br>",
+              "<strong>Hd:</strong> ", round(Hd, digits = 1)
+            )
+          ) %>%
+          addDrawToolbar(
+            targetGroup = 'draw',
+            polylineOptions = FALSE,
+            polygonOptions = list(
+              shapeOptions = list(
+                color = '#ff0000',
+                weight = 2,
+                fillOpacity = 0.3
+              ),
+              repeatMode = FALSE
+            ),
+            circleOptions = FALSE,
+            markerOptions = FALSE,
+            circleMarkerOptions = FALSE,
+            rectangleOptions = list(
+              shapeOptions = list(
+                color = '#ff0000',
+                weight = 2,
+                fillOpacity = 0.3
+              ),
+              repeatMode = FALSE
+            ),
+            editOptions = FALSE
+          )
+      })
+
+    }, error = function(e) {
+      showNotification("Error reading file. Please check the format.", type = "error")
+    })
+  })
+
+
+  # Color palette observer
+  observe({
+    req(values$all_data)
+    req(input$symbology != "none")
+
+    var_data <- values$all_data[[input$symbology]]
+    if (!is.null(var_data) && is.numeric(var_data) && length(unique(var_data)) > 1) {
+      values$color_palette <- colorBin(
+        palette = "viridis",
+        domain = var_data,
+        bins = 7,
+        pretty = FALSE
+      )
+    } else {
+      values$color_palette <- NULL
+    }
+  })
+
+  observeEvent(input$map.style, {
+    req(values$all_data)
+    updateMap()
+  })
+
+  # Function to update map highlighting
+  updateMapHighlighting <- function() {
+    # Clear previous highlights using a safe approach
+    leafletProxy("map") %>% clearGroup("temp_selected")
+
+    if (length(values$clicked_points) > 0 && !is.null(values$all_data)) {
+      selected_data <- values$all_data[values$all_data$PlotID %in% values$clicked_points, ]
+
+      if (nrow(selected_data) > 0) {
+        # Add highlights with a different group to avoid conflicts
+        leafletProxy("map") %>%
+          addCircleMarkers(
+            data = selected_data,
+            lng = ~Longitude,
+            lat = ~Latitude,
+            group = "temp_selected",
+            radius = 10,  # Larger radius for better visibility
+            color = "#FF0000",
+            fillColor = "#FF0000",
+            fillOpacity = 0.9,
+            stroke = TRUE,
+            weight = 3,
+            layerId = ~paste0("highlight_", PlotID)
+          )
+      }
+    }
+  }
+  # Handle individual point clicks
+  observeEvent(input$map_marker_click, {
+    req(values$all_data)
+
+    click <- input$map_marker_click
+    plot_id <- click$id
+
+    # Remove the "highlight_" prefix if it exists (from previous selections)
+    plot_id <- gsub("^highlight_", "", plot_id)
+
+    if (plot_id %in% values$clicked_points) {
+      # Remove from selection if already clicked
+      values$clicked_points <- setdiff(values$clicked_points, plot_id)
+    } else {
+      # Add to selection
+      values$clicked_points <- c(values$clicked_points, plot_id)
+    }
+
+    # Update temp selection
+    if (length(values$clicked_points) > 0) {
+      values$temp_selected <- values$all_data[values$all_data$PlotID %in% values$clicked_points, ]
+    } else {
+      values$temp_selected <- data.frame()
+    }
+
+    # Update map highlighting
+    updateMapHighlighting()
+  })
 
   # Update map when symbology changes
   observeEvent(input$symbology, {
@@ -358,7 +499,14 @@ point_selector_server <- function(input, output, session) {
         addDrawToolbar(
           targetGroup = 'draw',
           polylineOptions = FALSE,
-          polygonOptions = FALSE,
+          polygonOptions = list(
+            shapeOptions = list(
+              color = '#ff0000',
+              weight = 2,
+              fillOpacity = 0.3
+            ),
+            repeatMode = FALSE
+          ),
           circleOptions = FALSE,
           markerOptions = FALSE,
           circleMarkerOptions = FALSE,
@@ -408,18 +556,26 @@ point_selector_server <- function(input, output, session) {
     req(values$selected_data)
     req(nrow(values$selected_data) > 0)
 
-    datatable(
+    DT::datatable(
       values$selected_data,
       selection = 'multiple',
       options = list(
-        pageLength = 5,
+        pageLength = 50,
         scrollX = TRUE,
-        autoWidth = TRUE
-      )
+        autoWidth = FALSE,
+        dom = 'ltip',
+        searching = TRUE,
+        paging = TRUE,
+        info = TRUE
+      ),
+      style = 'bootstrap5'
     ) %>%
-      formatStyle(columns = colnames(values$selected_data),
-                  backgroundColor = '#2d3e50',
-                  color = 'white') # Dark theme for table
+      formatStyle(
+        columns = 1:ncol(values$selected_data),
+        target = 'row',
+        backgroundColor = styleEqual(c(TRUE), c('#343a40')),
+        color = 'white'
+      )
   })
 
   # Drop selected rows from table
