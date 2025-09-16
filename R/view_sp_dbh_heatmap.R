@@ -40,13 +40,13 @@
 #' @importFrom glue glue
 #' @export
 view_sp_dbh_heatmap <- function(plot_id = NULL,
-                                 year = 50,
-                                 data = NULL,
-                                 save_to = NULL,
-                                 metric = c("basal", "density"),
-                                 whole_range = FALSE,
-                                 dark = TRUE,
-                                 save_html = FALSE) {
+                                year = 50,
+                                data = NULL,
+                                save_to = NULL,
+                                metric = c("basal", "density"),
+                                whole_range = FALSE,
+                                dark = TRUE,
+                                save_html = FALSE) {
 
   # Validate year input
   if (length(year) != 1 || !is.numeric(year)) {

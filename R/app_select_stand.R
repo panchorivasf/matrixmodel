@@ -17,9 +17,12 @@
 #'
 #' @export
 app_select_stand <- function() {
+
   app_dir <- system.file("shiny", "app_select_stand", package = "matrixmodel")
+
   if (app_dir == "") {
-    stop("Could not find app directory. Try re-installing the package.", call. = FALSE)
+    stop("Could not find app directory. Try re-installing 'matrixmodel'",
+         call. = FALSE)
   }
 
   shiny::runApp(app_dir, display.mode = "normal")

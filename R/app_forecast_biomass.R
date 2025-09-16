@@ -19,7 +19,7 @@ app_forecast_biomass <- function() {
   app_dir <- system.file("shiny", "app_forecast_biomass",
                          package = "matrixmodel")
   if (app_dir == "") {
-    stop("Could not find app directory. Try re-installing the package.",
+    stop("Could not find app directory. Try re-installing 'matrixmodel'",
          call. = FALSE)
   }
 

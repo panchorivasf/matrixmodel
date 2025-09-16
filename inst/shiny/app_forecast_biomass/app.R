@@ -98,7 +98,7 @@ dark_css <- "
 
 # Define UI
 ui <- dashboardPage(
-  dashboardHeader(title = "Forecast Forest Stocks"),
+  dashboardHeader(title = "Matrix Model"),
 
   dashboardSidebar(
     sidebarMenu(

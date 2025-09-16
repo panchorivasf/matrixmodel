@@ -44,7 +44,8 @@ Imports:
     ranger,
     shinythemes,
     shinydashboard,
-    shinyWidgets
+    shinyWidgets,
+    patchwork
 Suggests:
     knitr,
     rmarkdown,
