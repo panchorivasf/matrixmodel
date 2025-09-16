@@ -7,6 +7,7 @@
 #' @param DBH Diameter at breast height
 #'
 #' @importFrom stats predict
+#' @import ranger
 #'
 #' @returns A prediction
 #'

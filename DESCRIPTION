@@ -1,6 +1,6 @@
 Package: matrixmodel
 Type: Package
-Title: Forest Biomass Projections with the Matrix Model
+Title: Forest Biomass Forecasting with the Matrix Model
 Version: 0.1.1
 Authors@R: c(
     person(
@@ -17,9 +17,14 @@ Authors@R: c(
       "Desmond", "Mensah",
       email = "dmensah@purdue.edu",
       role = c("aut")
+    ),
+    person(
+    "Varsha", "Raj Basavaraja",
+     email = "vbasavar@purdue.edu",
+     role = c("aut")
     )
   )
-Description: Functions to compute the matrix model with random forest for Indiana forests in the US.
+Description: Functions to compute matrix model forecasts for Indiana forests in the US.
 License: CC BY-NC 4.0 + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -41,6 +46,7 @@ Imports:
     shiny,
     shinyjs,
     DT,
+    stats,
     ranger,
     shinythemes,
     shinydashboard,

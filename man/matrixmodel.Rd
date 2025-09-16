@@ -32,6 +32,7 @@ Authors:
 \itemize{
   \item Jingjing Liang \email{jjliang@purdue.edu}
   \item Desmond Mensah \email{dmensah@purdue.edu}
+  \item Varsha Raj Basavaraja \email{vbasavar@purdue.edu}
 }
 
 }

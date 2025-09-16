@@ -126,36 +126,36 @@ project_biomass <- function(save_to = NULL,
 
 
 
-  summary_by_year <- summary_df |>
-    group_by(PlotID, Year) |>
-    summarise(
-      BA_total_mean      = mean(BA_total, na.rm = TRUE),
-      # BA_total_sd        = sd(BA_total,   na.rm = TRUE),
-      # BA_total_se        = BA_total_sd / sqrt(n()),
-      # BA_total_ci        = 1.96 * BA_total_se,
+  # summary_by_year <- summary_df |>
+  #   group_by(PlotID, Year) |>
+  #   summarise(
+  #     BA_total_mean      = mean(BA_total, na.rm = TRUE),
+  #     # BA_total_sd        = sd(BA_total,   na.rm = TRUE),
+  #     # BA_total_se        = BA_total_sd / sqrt(n()),
+  #     # BA_total_ci        = 1.96 * BA_total_se,
+  #
+  #     N_total_mean       = mean(N_total, na.rm = TRUE),
+  #     # N_total_sd         = sd(N_total,   na.rm = TRUE),
+  #     # N_total_se         = N_total_sd / sqrt(n()),
+  #     # N_total_ci         = 1.96 * N_total_se,
+  #
+  #     # rec_BA_total_mean  = mean(rec_BA_total, na.rm = TRUE),
+  #     # up_BA_total_mean   = mean(up_BA_total,  na.rm = TRUE),
+  #     # mort_BA_total_mean = mean(mort_BA_total, na.rm = TRUE),
+  #     #
+  #     # Hd_mean            = mean(Hd, na.rm = TRUE),
+  #     # Hs_mean            = mean(Hs, na.rm = TRUE),
+  #     # Shannon_DGP_mean   = mean(Shannon_DGP, na.rm = TRUE),
+  #     # Simpson_DGP_mean   = mean(Simpson_DGP, na.rm = TRUE),
+  #     # Shannon_SPCD_mean  = mean(Shannon_SPCD, na.rm = TRUE),
+  #     # Simpson_SPCD_mean  = mean(Simpson_SPCD, na.rm = TRUE),
+  #     .groups = "drop"
+  #   )
 
-      N_total_mean       = mean(N_total, na.rm = TRUE),
-      # N_total_sd         = sd(N_total,   na.rm = TRUE),
-      # N_total_se         = N_total_sd / sqrt(n()),
-      # N_total_ci         = 1.96 * N_total_se,
-
-      # rec_BA_total_mean  = mean(rec_BA_total, na.rm = TRUE),
-      # up_BA_total_mean   = mean(up_BA_total,  na.rm = TRUE),
-      # mort_BA_total_mean = mean(mort_BA_total, na.rm = TRUE),
-      #
-      # Hd_mean            = mean(Hd, na.rm = TRUE),
-      # Hs_mean            = mean(Hs, na.rm = TRUE),
-      # Shannon_DGP_mean   = mean(Shannon_DGP, na.rm = TRUE),
-      # Simpson_DGP_mean   = mean(Simpson_DGP, na.rm = TRUE),
-      # Shannon_SPCD_mean  = mean(Shannon_SPCD, na.rm = TRUE),
-      # Simpson_SPCD_mean  = mean(Simpson_SPCD, na.rm = TRUE),
-      .groups = "drop"
-    )
-
-  write.csv(summary_by_year,
-            file.path(summary_output,
-                      paste0("plot_", safe_plot_id, "_year_summary.csv")),
-            row.names = FALSE)
+  # write.csv(summary_by_year,
+  #           file.path(summary_output,
+  #                     paste0("plot_", safe_plot_id, "_year_summary.csv")),
+  #           row.names = FALSE)
 
   species_year <- pred_df |>
     group_by(PlotID, SPCD, SpeciesGroup, Year) |>
@@ -199,7 +199,7 @@ project_biomass <- function(save_to = NULL,
     plot_id = actual_plot_id,
     predictions = pred_df,
     summary = summary_df,
-    summary_by_year = summary_by_year,
+    # summary_by_year = summary_by_year,
     species_year = species_year,
     dgp_year = dgp_year
   )

@@ -1,4 +1,5 @@
 library(shiny)
+# library(shinyFiles)
 library(shinydashboard)
 library(shinyWidgets)
 library(DT)
@@ -126,10 +127,18 @@ ui <- dashboardPage(
                       "Upload Data File (.csv)",
                       accept = c(".csv")),
 
-            textInput("plot_id",
-                      "Plot ID",
-                      value = "",
-                      placeholder = "Enter plot identifier"),
+            # In the UI, update the plot selection section:
+            fluidRow(
+              column(8,
+                     selectizeInput("plot_id",
+                                    "Select Plot ID:",
+                                    choices = NULL,
+                                    options = list(
+                                      placeholder = 'Select or type plot ID',
+                                      maxOptions = 100
+                                    ))
+              )
+            ),
 
             numericInput("years",
                          "Simulation Years",
@@ -138,9 +147,29 @@ ui <- dashboardPage(
                          max = 100,
                          step = 5),
 
-            textInput("output_folder",
-                      "Output Folder Name",
-                      value = "simulation_output"),
+            box(
+              title = "Selected Plot",
+              status = "info",
+              solidHeader = TRUE,
+              width = 12,
+              uiOutput("plot_summary")
+            ),
+
+            # OUTPUT
+            box(
+              title = "Output Settings",
+              status = "info",
+              solidHeader = TRUE,
+              width = 6,
+
+              textInput("output_folder",
+                        "Output Folder Name",
+                        value = "simulation_output"),
+
+              verbatimTextOutput("output_location_info"),
+
+              helpText("Output will be automatically created in current working directory")
+            ),
 
             br(),
 
@@ -158,20 +187,16 @@ ui <- dashboardPage(
 
             textInput("m_model",
                       "Mortality Model Path",
-                      value = "./models/model_mortality.rds"),
+                      value = "models/model_mortality.rds"),
 
             textInput("u_model",
                       "Upgrowth Model Path",
-                      value = "./models/model_upgrowth.rds"),
+                      value = "models/model_upgrowth.rds"),
 
             textInput("r_model",
                       "Recruitment Model Path",
-                      value = "./models/model_recruitment.rds"),
+                      value = "models/model_recruitment.rds")
 
-            textInput("save_to",
-                      "Output Directory",
-                      value = "",
-                      placeholder = "Leave empty for current directory")
           )
         ),
 
@@ -309,6 +334,25 @@ server <- function(input, output, session) {
     progress = 0
   )
 
+  # Add this function to validate model paths
+  validate_model_path <- function(model_path) {
+    expanded_path <- path.expand(model_path)
+
+    if (!file.exists(expanded_path)) {
+      # Try relative to app directory
+      app_dir <- system.file("shiny", "app_forecast_biomass", package = "matrixmodel")
+      app_relative_path <- file.path(app_dir, model_path)
+
+      if (file.exists(app_relative_path)) {
+        return(app_relative_path)
+      } else {
+        stop("Model file not found: ", expanded_path)
+      }
+    }
+
+    return(expanded_path)
+  }
+
   # Data preview
   observeEvent(input$data_file, {
     req(input$data_file)
@@ -321,6 +365,131 @@ server <- function(input, output, session) {
     })
   })
 
+  # Show output location info
+  output$output_location_info <- renderText({
+    output_path <- file.path(getwd(), input$output_folder)
+    paste("Output will be saved to:", output_path)
+  })
+
+  # Reactive to store available plot IDs
+  available_plots <- reactiveVal(character(0))
+
+
+  observeEvent(values$data, {
+    req(values$data)
+
+    # Try to find plot ID column with safer approach
+    plot_cols <- c("plot_id", "PlotID", "Plot_ID", "plot", "Plot", "ID", "id")
+    plot_col <- NULL
+
+    for (col in plot_cols) {
+      if (col %in% names(values$data)) {
+        plot_col <- col
+        break
+      }
+    }
+
+    if (!is.null(plot_col)) {
+      plot_ids <- unique(values$data[[plot_col]])
+      plot_ids <- plot_ids[!is.na(plot_ids) & plot_ids != ""]
+      plot_ids <- sort(plot_ids)
+
+      if (length(plot_ids) > 0) {
+        available_plots(plot_ids)
+
+        # Update selectize with server-side approach
+        updateSelectizeInput(session, "plot_id",
+                             choices = plot_ids,
+                             server = TRUE,  # Server-side processing for performance
+                             selected = ifelse(length(plot_ids) > 0, plot_ids[1], ""))
+      } else {
+        available_plots(character(0))
+        updateSelectizeInput(session, "plot_id", choices = character(0))
+      }
+    } else {
+      # If no plot column found, use row identifiers
+      available_plots(paste0("Plot_", 1:min(10, nrow(values$data))))
+      updateSelectizeInput(session, "plot_id",
+                           choices = available_plots(),
+                           server = TRUE,
+                           selected = available_plots()[1])
+
+      showNotification("No plot ID column found. Using generated IDs.", type = "warning")
+    }
+  })
+
+  # Add this helper function for safe value extraction
+  safe_value <- function(x, default = NA) {
+    if (length(x) == 0 || is.null(x) || is.na(x) || x == "") {
+      return(default)
+    }
+    return(x)
+  }
+
+  # # Enhanced refresh button with error handling
+  # observeEvent(input$refresh_plots, {
+  #   req(values$data)
+  #
+  #   column_choices <- names(values$data)
+  #   if (length(column_choices) == 0) {
+  #     showNotification("No columns available in data", type = "error")
+  #     return()
+  #   }
+  #
+  #   showModal(modalDialog(
+  #     title = "Select Plot ID Column",
+  #     selectInput("plot_column",
+  #                 "Choose the column that contains Plot IDs:",
+  #                 choices = column_choices,
+  #                 selected = safe_value(intersect(c("plot_id", "PlotID", "Plot_ID"), column_choices)[1])),
+  #     footer = tagList(
+  #       modalButton("Cancel"),
+  #       actionButton("confirm_plot_col", "Use Selected Column", class = "btn-success")
+  #     )
+  #   ))
+  # })
+
+  observeEvent(input$confirm_plot_col, {
+    req(input$plot_column, values$data)
+
+    if (input$plot_column %in% names(values$data)) {
+      plot_ids <- unique(values$data[[input$plot_column]])
+      plot_ids <- sort(plot_ids[!is.na(plot_ids)])
+      available_plots(plot_ids)
+
+      updateSelectizeInput(session, "plot_id",
+                           choices = plot_ids,
+                           selected = ifelse(length(plot_ids) > 0, plot_ids[1], ""))
+
+      removeModal()
+      showNotification(paste("Using column:", input$plot_column), type = "message")
+    }
+  })
+
+  # Replace the observeEvent(input$data_preview_cell_clicked) with:
+  observeEvent(input$data_preview_cell_clicked, {
+    click <- input$data_preview_cell_clicked
+    req(click, values$data, click$row > 0)  # Ensure valid row
+
+    # Safely get the row data
+    if (click$row <= nrow(values$data)) {
+      row_data <- values$data[click$row, ]
+
+      # Try to find plot ID in the clicked row (safe approach)
+      plot_cols <- c("plot_id", "PlotID", "Plot_ID", "plot", "Plot", "ID")
+      plot_col <- intersect(plot_cols, names(row_data))
+
+      if (length(plot_col) > 0) {
+        plot_id <- as.character(row_data[[plot_col[1]]])
+        if (!is.na(plot_id) && plot_id != "") {
+          updateSelectizeInput(session, "plot_id", selected = plot_id)
+          showNotification(paste("Selected plot:", plot_id), type = "message")
+        }
+      }
+    }
+  })
+
+  # Enhanced data preview with clickable rows
   output$data_preview <- DT::renderDataTable({
     req(values$data)
 
@@ -330,8 +499,16 @@ server <- function(input, output, session) {
         pageLength = 10,
         scrollX = TRUE,
         dom = 'ltip',
-        columnDefs = list(list(className = 'dt-center', targets = "_all"))
+        columnDefs = list(list(className = 'dt-center', targets = "_all")),
+        # Make rows selectable
+        rowCallback = JS(
+          "function(row, data) {",
+          "  $(row).css('cursor', 'pointer');",
+          "  $(row).attr('title', 'Click to select this plot');",
+          "}"
+        )
       ),
+      selection = 'single',
       style = "bootstrap",
       class = "table-bordered table-condensed"
     ) %>%
@@ -339,61 +516,89 @@ server <- function(input, output, session) {
                   backgroundColor = "#34495e", color = "#ffffff")
   })
 
-  # Run forecast
+  # Replace the plot summary observer with:
+  observeEvent(input$plot_id, {
+    req(input$plot_id, values$data)
+
+    # Safe approach to find plot column
+    plot_cols <- c("plot_id", "PlotID", "Plot_ID", "plot", "Plot", "ID")
+    plot_col <- intersect(plot_cols, names(values$data))
+
+    if (length(plot_col) == 0) return()  # No plot column found
+
+    plot_data <- values$data[values$data[[plot_col[1]]] == input$plot_id, ]
+
+    # Safe summary generation
+    output$plot_summary <- renderUI({
+      if (nrow(plot_data) == 0) {
+        return(tags$p("No data found for selected plot"))
+      }
+
+      tagList(
+        h5(paste("Plot", input$plot_id))
+      )
+    })
+  })
+
+
+  # Run forecast - SIMPLIFIED version with fixed notifications
   observeEvent(input$run_forecast, {
     req(values$data)
-
-    if (input$plot_id == "") {
-      showNotification("Please enter a Plot ID", type = "error")
-      return()
-    }
 
     # Reset progress
     updateProgressBar(session, "forecast_progress", value = 0)
     values$progress <- 0
 
-    # Simulate progress updates
-    progress_timer <- reactiveTimer(500)
-
-    observe({
-      progress_timer()
-      if (values$progress < 90 && !is.null(values$results)) {
-        values$progress <- min(values$progress + 10, 90)
-        updateProgressBar(session, "forecast_progress", value = values$progress)
-      }
-    })
-
+    # Use tryCatch with proper error handling
     tryCatch({
-      showNotification("Starting forecast simulation...", type = "message")
+      # Show simple message instead of notification for progress
+      output$progress_text <- renderText({"Starting forecast simulation..."})
 
-      # Prepare parameters
-      save_path <- if (input$save_to == "") NULL else input$save_to
+      # Create output directory in current working directory
+      output_dir <- file.path(getwd(), input$output_folder)
+      if (!dir.exists(output_dir)) {
+        dir.create(output_dir, recursive = TRUE)
+        # Use simple message instead of notification
+        output$progress_text <- renderText({paste("Created output directory:", output_dir)})
+      }
+
+      # Validate model paths first
+      m_model_path <- validate_model_path(input$m_model)
+      u_model_path <- validate_model_path(input$u_model)
+      r_model_path <- validate_model_path(input$r_model)
+
+      # Update progress
+      values$progress <- 30
+      updateProgressBar(session, "forecast_progress", value = 30)
+      output$progress_text <- renderText({"Loading models..."})
 
       # Run the forecast
       values$results <- project_biomass(
-        save_to = save_path,
+        save_to = output_dir,
         data = values$data,
         plot_id = input$plot_id,
         years = input$years,
-        m_model = input$m_model,
-        u_model = input$u_model,
-        r_model = input$r_model,
-        output_folder_name = input$output_folder
+        m_model = m_model_path,
+        u_model = u_model_path,
+        r_model = r_model_path,
+        output_folder_name = ""
       )
 
       # Complete progress
       values$progress <- 100
       updateProgressBar(session, "forecast_progress", value = 100)
+      output$progress_text <- renderText({paste("Forecast completed for Plot:", input$plot_id)})
 
-      showNotification("Forecast completed successfully!", type = "success")
-
-      # Switch to results tab
+      # Show success message (using safe notification)
+      showNotification("Forecast completed successfully!", type = "message")
       updateTabItems(session, "tabs", "results")
 
     }, error = function(e) {
+      # Safe error notification
       showNotification(paste("Forecast error:", e$message), type = "error")
       values$progress <- 0
       updateProgressBar(session, "forecast_progress", value = 0)
+      output$progress_text <- renderText({paste("Error:", e$message)})
     })
   })
 

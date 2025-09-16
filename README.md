@@ -20,6 +20,7 @@ You can install the development version of `matrixmodel` from
 ``` r
 # install.packages("pak")
 pak::pak("panchorivasf/matrixmodel")
+# Follow instructions 
 ```
 
 Once the package is installed, load it into `R` with:
