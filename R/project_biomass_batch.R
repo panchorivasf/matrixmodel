@@ -1,5 +1,8 @@
 #' Project forest stocks for many plots
 #'
+#' DEPRECATED. This function is deprecated. Please use `forecast_biomass()`
+#' instead.
+#'
 #' @param save_to Path to output folder
 #' @param data_source A data frame, a list of data frames, a CSV file path,
 #' or the path to a directory with multiple CSVs (individual plots).

@@ -37,7 +37,8 @@ project_biomass(
 A list with data frames
 }
 \description{
-Project forest stocks over a plot file
+DEPRECATED. This function is deprecated. Please use `forecast_biomass()`
+instead.
 }
 \examples{
 \dontrun{

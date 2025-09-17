@@ -51,7 +51,8 @@ Imports:
     shinythemes,
     shinydashboard,
     shinyWidgets,
-    patchwork
+    patchwork,
+    future
 Suggests:
     knitr,
     rmarkdown,

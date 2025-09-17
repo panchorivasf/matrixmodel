@@ -1,5 +1,4 @@
 library(shiny)
-# library(shinyFiles)
 library(shinydashboard)
 library(shinyWidgets)
 library(DT)
@@ -146,6 +145,29 @@ ui <- dashboardPage(
                          min = 1,
                          max = 100,
                          step = 5),
+
+            checkboxInput("clear_start",
+                          "Clear Start",
+                          value = FALSE),
+
+            checkboxInput("allow_colon",
+                          "Allow colonization",
+                          value = FALSE),
+
+            numericInput("clear_year",
+                         "Clearcut Year",
+                          value = NULL,
+                         min = 1,
+                         max = 200),
+
+            fileInput("plant_init",
+                      "Upload initial plantation file (.csv)",
+                      accept = c(".csv")),
+
+            fileInput("plant_post",
+                      "Upload midterm plantation file (.csv)",
+                      accept = c(".csv")),
+
 
             box(
               title = "Selected Plot",
@@ -334,24 +356,67 @@ server <- function(input, output, session) {
     progress = 0
   )
 
-  # Add this function to validate model paths
-  validate_model_path <- function(model_path) {
-    expanded_path <- path.expand(model_path)
-
-    if (!file.exists(expanded_path)) {
-      # Try relative to app directory
-      app_dir <- system.file("shiny", "app_forecast_biomass", package = "matrixmodel")
-      app_relative_path <- file.path(app_dir, model_path)
-
-      if (file.exists(app_relative_path)) {
-        return(app_relative_path)
-      } else {
-        stop("Model file not found: ", expanded_path)
-      }
+  output$models_status <- renderText({
+    if (models_loaded()) {
+      "All models loaded and ready!"
+    } else {
+      "Models are still loading. Please wait..."
     }
+  })
 
-    return(expanded_path)
+  # Reactive values to store loaded models
+  # models <- reactiveValues(
+  #   mortality = NULL,
+  #   upgrowth = NULL,
+  #   recruitment = NULL
+  # )
+
+  # # Load models when needed (with error handling)
+  # observe({
+  #   tryCatch({
+  #     if (is.null(models$mortality)) {
+  #       models$mortality <- load_model("mortality")
+  #     }
+  #     if (is.null(models$upgrowth)) {
+  #       models$upgrowth <- load_model("upgrowth")
+  #     }
+  #     if (is.null(models$recruitment)) {
+  #       models$recruitment <- load_model("recruitment")
+  #     }
+  #   }, error = function(e) {
+  #     showNotification(
+  #       paste("Error loading models:", e$message),
+  #       type = "error",
+  #       duration = NULL
+  #     )
+  #   })
+  # })
+
+  # Update your validate_model_path function
+  validate_model_path <- function(model_type) {
+    req(models[[model_type]])
+    return(models[[model_type]])
   }
+
+
+  # # Add this function to validate model paths
+  # validate_model_path <- function(model_path) {
+  #   expanded_path <- path.expand(model_path)
+  #
+  #   if (!file.exists(expanded_path)) {
+  #     # Try relative to app directory
+  #     app_dir <- system.file("shiny", "app_forecast_biomass", package = "matrixmodel")
+  #     app_relative_path <- file.path(app_dir, model_path)
+  #
+  #     if (file.exists(app_relative_path)) {
+  #       return(app_relative_path)
+  #     } else {
+  #       stop("Model file not found: ", expanded_path)
+  #     }
+  #   }
+  #
+  #   return(expanded_path)
+  # }
 
   # Data preview
   observeEvent(input$data_file, {
@@ -545,6 +610,14 @@ server <- function(input, output, session) {
   observeEvent(input$run_forecast, {
     req(values$data)
 
+    if (!models_loaded()) {
+      showNotification("Models are still loading. Please wait...",
+                       type = "warning")
+      return()
+    }
+
+    # req(values$data, models$mortality, models$upgrowth, models$recruitment)
+
     # Reset progress
     updateProgressBar(session, "forecast_progress", value = 0)
     values$progress <- 0
@@ -562,10 +635,23 @@ server <- function(input, output, session) {
         output$progress_text <- renderText({paste("Created output directory:", output_dir)})
       }
 
-      # Validate model paths first
-      m_model_path <- validate_model_path(input$m_model)
-      u_model_path <- validate_model_path(input$u_model)
-      r_model_path <- validate_model_path(input$r_model)
+      # validate_model_path <- function(model_path) {
+      #   # Extract just the filename from the path
+      #   model_name <- basename(model_path)
+      #
+      #   # Use our new loading system
+      #   tryCatch({
+      #     load_model(model_name)
+      #   }, error = function(e) {
+      #     stop("Failed to load model: ", model_name, "\nError: ", e$message)
+      #   })
+      # }
+
+      # Check if models are loaded
+      if (is.null(models$mortality) || is.null(models$upgrowth) || is.null(models$recruitment)) {
+        showNotification("Models are still loading. Please wait...", type = "warning")
+        return()
+      }
 
       # Update progress
       values$progress <- 30
@@ -573,14 +659,19 @@ server <- function(input, output, session) {
       output$progress_text <- renderText({"Loading models..."})
 
       # Run the forecast
-      values$results <- project_biomass(
+      values$results <- forecast_biomass(
         save_to = output_dir,
         data = values$data,
         plot_id = input$plot_id,
         years = input$years,
-        m_model = m_model_path,
-        u_model = u_model_path,
-        r_model = r_model_path,
+        clear_start = input$clear_start,
+        clear_year = input$clear_year,
+        planting_init = input$planting_init,
+        planting_post = input$planting_post,
+        allow_colonization = input$allow_colonization,
+        # m_model = models$mortality,
+        # u_model = models$upgrowth,
+        # r_model = models$recruitment,
         output_folder_name = ""
       )
 
@@ -715,8 +806,11 @@ server <- function(input, output, session) {
                  line = list(color = '#3498db', width = 3),
                  marker = list(color = '#e74c3c', size = 8)) %>%
       layout(
-        title = paste("Forest", gsub("_", " ", gsub("_mean", "", input$plot_metric)), "Over Time"),
-        xaxis = list(title = "Year", color = "white", gridcolor = "#4a6572"),
+        title = paste("Forest", gsub("_", " ",
+                                     gsub("_mean", "", input$plot_metric)),
+                      "Over Time"),
+        xaxis = list(title = "Year", color = "white",
+                     gridcolor = "#4a6572"),
         yaxis = list(title = y_title,
                      type = if (input$log_scale) "log" else "linear",
                      color = "white", gridcolor = "#4a6572"),

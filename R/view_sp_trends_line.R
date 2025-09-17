@@ -79,7 +79,15 @@ view_sp_trends_line <- function(plot_id = NULL,
          (file path), not ", class(data)[1])
   }
 
-  if (!is.null(plot_id)) {
+
+
+  # Single Plot ----
+  if (!is.null(plot_id) || (is.null(plot_id) && n_distinct(data$PlotID) == 1)) {
+    # If plot_id is NULL but there's only one plot, set it
+    if (is.null(plot_id)) {
+      plot_id <- unique(data$PlotID)[1]
+    }
+
     df <- df |>
       group_by(PlotID, #DGP,
                SpeciesGroup,
@@ -120,10 +128,65 @@ view_sp_trends_line <- function(plot_id = NULL,
     # Create interactive plot
     p <- plot_ly(dplot, x = ~Year, y = ~.data[[metric_col]],
                  color = ~factor(SpeciesGroup),
+                 colors = "Set3",
                  type = 'scatter', mode = 'lines',
                  line = list(width = 2), hoverinfo = 'text',
-                 text = ~glue("Species: {SpeciesGroup}<br>Year: {Year}<br>{metric_display}: {round(.data[[metric_col]], 2)}")) %>%
-      plotly::layout(title = list(
+                 text = ~glue("Species: {SpeciesGroup}<br>Year: {Year}<br>{metric_display}: {round(.data[[metric_col]], 2)}"))
+
+
+    if (dark) {
+
+      p <- p %>%
+        plotly::layout(
+          title = list(
+            # text = glue("{metric_display} (All plots)"),
+            text = glue("{metric_display}<br><sub>PLOT: {plot_id}</sub>"),
+            x = 0,  # Left align
+            xref = "paper",
+            font = list(color = "white")  # White title
+          ),
+          margin = list(l = 80, r = 80, t = 80, b = 80),
+          plot_bgcolor = "#1a2530",      # Dark background for plotting area
+          paper_bgcolor = "#2d3e50",     # Slightly lighter dark background for outer area
+          yaxis = list(
+            title = metric_display,
+            color = "white",             # White axis text
+            gridcolor = "#4a6572",       # Dark gray grid lines
+            zerolinecolor = "#4a6572",   # Dark gray zero line
+            linecolor = "white",         # White axis line
+            tickfont = list(color = "white")  # White tick labels
+          ),
+          xaxis = list(
+            title = "Year",
+            color = "white",             # White axis text
+            gridcolor = "#4a6572",       # Dark gray grid lines
+            zerolinecolor = "#4a6572",   # Dark gray zero line
+            linecolor = "white",         # White axis line
+            tickfont = list(color = "white")  # White tick labels
+          ),
+          showlegend = TRUE,
+          legend = list(
+            title = list(text = "Species Group",
+                         font = list(color = "white")),
+            font = list(color = "white")  # White legend text
+          ),
+          font = list(color = "white")    # Global white font for any other text
+        )
+
+      if (save_html) {
+        if (!is.null(save_to)) {
+          filename <- glue("interactive_{metric}_species_plot_{plot_id}.html")
+          saveWidget(p, file.path(save_to, filename))
+        } else {
+          filename <- glue("interactive_{metric}_species_plot_{plot_id}.html")
+          saveWidget(p, file.path(getwd(), filename))    }
+      }
+
+    } else {
+
+      # Single plot white background
+
+    p <- p %>% plotly::layout(title = list(
         text = glue("{metric_display}<br><sub>PLOT: {plot_id}</sub>"),
         x = 0,  # Left align
         xref = "paper"
@@ -131,7 +194,8 @@ view_sp_trends_line <- function(plot_id = NULL,
       yaxis = list(title = metric_display),
       xaxis = list(title = "Year"),
       showlegend = TRUE,
-      legend = list(title = list(text = "Species Group")))
+      legend = list(title = list(text = "Species Group")),
+      margin = list(l = 80, r = 80, t = 80, b = 80))
 
     if (save_html) {
       if (!is.null(save_to)) {
@@ -140,6 +204,7 @@ view_sp_trends_line <- function(plot_id = NULL,
       } else {
         filename <- glue("interactive_{metric}_species_plot_{plot_id}.html")
         saveWidget(p, file.path(getwd(), filename))    }
+      }
     }
 
   } else {

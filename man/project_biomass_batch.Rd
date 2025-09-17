@@ -39,7 +39,8 @@ Default is -1 (all but one).}
 A list with data frames
 }
 \description{
-Project forest stocks for many plots
+DEPRECATED. This function is deprecated. Please use `forecast_biomass()`
+instead.
 }
 \examples{
 \dontrun{

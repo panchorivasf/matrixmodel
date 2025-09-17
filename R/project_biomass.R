@@ -1,5 +1,8 @@
 #' Project forest stocks over a plot file
 #'
+#' DEPRECATED. This function is deprecated. Please use `forecast_biomass()`
+#' instead.
+#'
 #' @param save_to Path to output folder
 #' @param data A data frame or CSV file containing the input data in the
 #' "matrix model" format.
