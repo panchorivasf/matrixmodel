@@ -23,38 +23,89 @@ MODEL_FILES <- list(
 
   message("Downloading models from Zenodo...")
 
-  # Create cache directory
+  # Create cache directory if it doesn't exist
   cache_dir <- getOption("matrixmodel.cache_dir")
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+    message("Created cache directory: ", cache_dir)
   }
 
-  # Download each model file
+  download_count <- 0
+  total_models <- length(MODEL_URLS)
+
   for (model_type in names(MODEL_URLS)) {
     file_name <- MODEL_FILES[[model_type]]
     cache_path <- file.path(cache_dir, file_name)
 
+    # Skip if already in memory (shouldn't happen, but safe)
+    if (exists(model_type, envir = .matrixmodel_models)) {
+      message("Already loaded: ", model_type)
+      download_count <- download_count + 1
+      next
+    }
+
     message("Downloading ", file_name, "...")
 
-    # Use robust download with retries
     success <- download_with_retry(
       url = MODEL_URLS[[model_type]],
       dest_path = cache_path,
-      max_retries = 3,
-      timeout = 600  # 10 minutes for the 140MB file
+      max_retries = 2,
+      timeout = 600
     )
 
     if (success) {
-      # Load into memory
-      .matrixmodel_models[[model_type]] <- readRDS(cache_path)
-      message("  ??? ", model_type, " model loaded successfully")
+      tryCatch({
+        .matrixmodel_models[[model_type]] <- readRDS(cache_path)
+        message("  ??? ", model_type, " model loaded successfully")
+        download_count <- download_count + 1
+      }, error = function(e) {
+        warning("Downloaded file is corrupt: ", model_type, " - ", e$message)
+        unlink(cache_path)  # Remove corrupt file
+      })
     } else {
       warning("Failed to download: ", file_name)
     }
   }
 
-  return(models_loaded())
+  return(download_count == total_models)
 }
+# .load_models <- function() {
+#   if (models_loaded()) return(TRUE)
+#
+#   message("Downloading models from Zenodo...")
+#
+#   # Create cache directory
+#   cache_dir <- getOption("matrixmodel.cache_dir")
+#   if (!dir.exists(cache_dir)) {
+#     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+#   }
+#
+#   # Download each model file
+#   for (model_type in names(MODEL_URLS)) {
+#     file_name <- MODEL_FILES[[model_type]]
+#     cache_path <- file.path(cache_dir, file_name)
+#
+#     message("Downloading ", file_name, "...")
+#
+#     # Use robust download with retries
+#     success <- download_with_retry(
+#       url = MODEL_URLS[[model_type]],
+#       dest_path = cache_path,
+#       max_retries = 3,
+#       timeout = 600  # 10 minutes for the 140MB file
+#     )
+#
+#     if (success) {
+#       # Load into memory
+#       .matrixmodel_models[[model_type]] <- readRDS(cache_path)
+#       message("  ??? ", model_type, " model loaded successfully")
+#     } else {
+#       warning("Failed to download: ", file_name)
+#     }
+#   }
+#
+#   return(models_loaded())
+# }
 
 # Robust download function with retries and progress
 download_with_retry <- function(url, dest_path, max_retries = 3, timeout = 600) {
@@ -88,6 +139,15 @@ download_with_retry <- function(url, dest_path, max_retries = 3, timeout = 600) 
 .load_models_from_cache <- function() {
   cache_dir <- getOption("matrixmodel.cache_dir")
 
+  # Check if cache directory exists
+  if (!dir.exists(cache_dir)) {
+    message("Cache directory does not exist: ", cache_dir)
+    return(FALSE)
+  }
+
+  loaded_count <- 0
+  total_models <- length(MODEL_FILES)
+
   for (model_type in names(MODEL_FILES)) {
     file_name <- MODEL_FILES[[model_type]]
     cache_path <- file.path(cache_dir, file_name)
@@ -96,28 +156,41 @@ download_with_retry <- function(url, dest_path, max_retries = 3, timeout = 600) 
       tryCatch({
         .matrixmodel_models[[model_type]] <- readRDS(cache_path)
         message("Loaded from cache: ", model_type)
+        loaded_count <- loaded_count + 1
       }, error = function(e) {
-        warning("Failed to load from cache: ", model_type, " - ", e$message)
+        warning("Corrupt cache file, will re-download: ", model_type, " - ", e$message)
         # Remove corrupt cache file
         unlink(cache_path)
       })
+    } else {
+      message("Cache file not found: ", file_name)
     }
   }
 
-  return(models_loaded())
+  # Return TRUE only if ALL models are loaded from cache
+  return(loaded_count == total_models)
 }
 
-# Try direct download first, then cache
+# Try cache first, then download if needed
 .load_models_with_fallback <- function() {
-  # Try direct download first
-  success <- .load_models()
+  # FIRST try cache
+  cache_success <- .load_models_from_cache()
 
-  if (!success) {
-    message("Direct download failed, trying cache...")
-    success <- .load_models_from_cache()
+  if (cache_success) {
+    message("Models loaded from cache.")
+    return(TRUE)
   }
 
-  return(success)
+  # If cache fails, THEN download from Zenodo
+  message("Cache not found or corrupt, downloading from Zenodo...")
+  download_success <- .load_models()
+
+  if (!download_success) {
+    warning("Both cache and download failed. Models not loaded.")
+    return(FALSE)
+  }
+
+  return(TRUE)
 }
 
 # Check if models are loaded

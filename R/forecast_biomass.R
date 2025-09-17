@@ -73,21 +73,21 @@ forecast_biomass <- function(save_to = NULL,
     if (!models_loaded()) {
       stop("Mortality model not loaded. Please wait for package initialization or use load_all_models()")
     }
-    m_model <- get_model("mortality")
+    m <- get_model("mortality")
   }
 
   if (is.null(u_model)) {
     if (!models_loaded()) {
       stop("Upgrowth model not loaded. Please wait for package initialization or use load_all_models()")
     }
-    u_model <- get_model("upgrowth")
+    u <- get_model("upgrowth")
   }
 
   if (is.null(r_model)) {
     if (!models_loaded()) {
       stop("Recruitment model not loaded. Please wait for package initialization or use load_all_models()")
     }
-    r_model <- get_model("recruitment")
+    r <- get_model("recruitment")
   }
 
   # Validate that models are actually model objects, not file paths

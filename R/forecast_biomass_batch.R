@@ -20,9 +20,6 @@
 #' species pool.)
 #' @param minimal_if_clearcut Logical.if any clear-cut happens, only save
 #' summary and year_summary.
-#' @param m_model Path to the mortality model '.rds' file.
-#' @param u_model Path to the upgrowth model '.rds' file.
-#' @param r_model Path to the recruitment model '.rds' file.
 #' @param output_folder_name Character. A name for the output folder to be
 #' created in the 'save_to' directory.
 #' @param n_cores Numeric. Number of cores to use in the parallel process.
@@ -46,9 +43,9 @@ forecast_biomass_batch <- function(save_to = NULL,
                                   planting_post = NULL,
                                   allow_colonization = TRUE,
                                   minimal_if_clearcut = TRUE,
-                                  m_model = "./models/model_mortality.rds",
-                                  u_model = "./models/model_upgrowth.rds",
-                                  r_model = "./models/model_recruitment.rds",
+                                  # m_model = NULL,
+                                  # u_model = NULL,
+                                  # r_model = "./models/model_recruitment.rds",
                                   output_folder_name = "forecast_batch_results",
                                   n_cores = -1) {
 
@@ -180,9 +177,9 @@ forecast_biomass_batch <- function(save_to = NULL,
         planting_post = planting_post,
         allow_colonization = allow_colonization,
         minimal_if_clearcut = minimal_if_clearcut,
-        m_model = m_model,
-        u_model = u_model,
-        r_model = r_model,
+        # m_model = m_model,
+        # u_model = u_model,
+        # r_model = r_model,
         output_folder_name = output_folder_name
       )
 

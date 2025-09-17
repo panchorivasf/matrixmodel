@@ -98,7 +98,7 @@ dark_css <- "
 
 # Define UI
 ui <- dashboardPage(
-  dashboardHeader(title = "Matrix Model"),
+  dashboardHeader(title = "Matrix Model Forest Forecast"),
 
   dashboardSidebar(
     sidebarMenu(
@@ -115,9 +115,10 @@ ui <- dashboardPage(
       # Setup tab
       tabItem(
         tabName = "setup",
+        fluidColum
         fluidRow(
           box(
-            title = "Forecast Configuration",
+            title = "Data Input",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
@@ -126,108 +127,116 @@ ui <- dashboardPage(
                       "Upload Data File (.csv)",
                       accept = c(".csv")),
 
-            # In the UI, update the plot selection section:
-            fluidRow(
-              column(8,
-                     selectizeInput("plot_id",
-                                    "Select Plot ID:",
-                                    choices = NULL,
-                                    options = list(
-                                      placeholder = 'Select or type plot ID',
-                                      maxOptions = 100
-                                    ))
-              )
-            ),
+            selectizeInput("plot_id",
+                           "Select Plot ID:",
+                           choices = NULL,
+                           options = list(
+                             placeholder = 'Select or type plot ID',
+                             maxOptions = 100
+                           ))
+          ),
+
+          box(
+            title = "Simulation Parameters",
+            status = "info",
+            solidHeader = TRUE,
+            width = 6,
 
             numericInput("years",
                          "Simulation Years",
                          value = 50,
                          min = 1,
-                         max = 100,
-                         step = 5),
+                         max = 200,
+                         step = 1),
 
             checkboxInput("clear_start",
-                          "Clear Start",
+                          "Start with clearcut",
                           value = FALSE),
 
-            checkboxInput("allow_colon",
-                          "Allow colonization",
-                          value = FALSE),
-
-            numericInput("clear_year",
-                         "Clearcut Year",
-                          value = NULL,
-                         min = 1,
-                         max = 200),
-
-            fileInput("plant_init",
-                      "Upload initial plantation file (.csv)",
-                      accept = c(".csv")),
-
-            fileInput("plant_post",
-                      "Upload midterm plantation file (.csv)",
-                      accept = c(".csv")),
-
-
-            box(
-              title = "Selected Plot",
-              status = "info",
-              solidHeader = TRUE,
-              width = 12,
-              uiOutput("plot_summary")
+            conditionalPanel(
+              condition = "!input.clear_start",
+              numericInput("clear_year",
+                           "Clearcut Year (optional)",
+                           value = NA,
+                           min = 1,
+                           max = 200)
             ),
 
-            # OUTPUT
-            box(
-              title = "Output Settings",
-              status = "info",
-              solidHeader = TRUE,
-              width = 6,
-
-              textInput("output_folder",
-                        "Output Folder Name",
-                        value = "simulation_output"),
-
-              verbatimTextOutput("output_location_info"),
-
-              helpText("Output will be automatically created in current working directory")
-            ),
-
-            br(),
-
-            actionButton("run_forecast",
-                         "Run Forecast",
-                         class = "btn-primary btn-lg",
-                         icon = icon("play"))
-          ),
-
-          # box(
-          #   title = "Model Files",
-          #   status = "info",
-          #   solidHeader = TRUE,
-          #   width = 6,
-          #
-          #   textInput("m_model",
-          #             "Mortality Model Path",
-          #             value = "models/model_mortality.rds"),
-          #
-          #   textInput("u_model",
-          #             "Upgrowth Model Path",
-          #             value = "models/model_upgrowth.rds"),
-          #
-          #   textInput("r_model",
-          #             "Recruitment Model Path",
-          #             value = "models/model_recruitment.rds")
-          #
-          # )
+            checkboxInput("allow_colonization",
+                          "Allow species colonization",
+                          value = TRUE)
+          )
         ),
 
         fluidRow(
           box(
-            title = "Data Preview",
+            title = "Planting Configuration",
             status = "warning",
             solidHeader = TRUE,
+            width = 6,
+
+            conditionalPanel(
+              condition = "input.clear_start",
+              fileInput("plant_init",
+                        "Initial Plantation File (.csv)",
+                        accept = c(".csv")),
+              helpText("CSV should have columns: SPCD, TPH")
+            ),
+
+            conditionalPanel(
+              condition = "input.clear_year",
+              fileInput("plant_post",
+                        "Post-clearcut Plantation File (.csv)",
+                        accept = c(".csv")),
+              helpText("CSV should have columns: SPCD, TPH")
+            )
+
+          ),
+
+          box(
+            title = "Output Settings",
+            status = "success",
+            solidHeader = TRUE,
+            width = 6,
+
+            textInput("output_folder",
+                      "Output Folder Name",
+                      value = "simulation_output"),
+
+            verbatimTextOutput("output_location_info"),
+
+            helpText("Files will be saved in your current working directory"),
+
+            # br(),
+            # actionButton("run_forecast",
+            #              "Run Forest Forecast",
+            #              class = "btn-primary btn-lg",
+            #              icon = icon("play"))
+          ),
+
+          # box(
+          #   status = "success",
+          #   solidHeader = FALSE,
+          #   with = 6,
+
+            actionButton("run_forecast",
+                         "Run Forest Forecast",
+                         class = "btn-primary btn-lg",
+                         icon = icon("play")) ,
+          br()
+          # ),
+        ),
+
+
+
+        fluidRow(
+          box(
+            title = "Data Preview",
+            status = "info",
+            solidHeader = TRUE,
             width = 12,
+            collapsible = TRUE,
+            collapsed = FALSE,  # Show by default so users can see their data
 
             DT::dataTableOutput("data_preview")
           )
@@ -235,7 +244,7 @@ ui <- dashboardPage(
 
         fluidRow(
           box(
-            title = "Progress",
+            title = "Progress & Status",
             status = "success",
             solidHeader = TRUE,
             width = 12,
@@ -267,16 +276,16 @@ ui <- dashboardPage(
 
         fluidRow(
           tabBox(
-            title = "Results Tables",
+            title = "Forecast Results",
             width = 12,
 
             tabPanel("Summary by Year",
-                     DT::dataTableOutput("year_summary_table")),
+                     DT::dataTableOutput("summary_table")),
 
-            tabPanel("Species Summary",
+            tabPanel("Species by Year",
                      DT::dataTableOutput("species_table")),
 
-            tabPanel("DBH Group Summary",
+            tabPanel("DBH Groups by Year",
                      DT::dataTableOutput("dgp_table")),
 
             tabPanel("Detailed Predictions",
@@ -290,7 +299,7 @@ ui <- dashboardPage(
         tabName = "viz",
         fluidRow(
           box(
-            title = "Time Series Plots",
+            title = "Forest Metrics Over Time",
             status = "primary",
             solidHeader = TRUE,
             width = 12,
@@ -299,12 +308,12 @@ ui <- dashboardPage(
               column(6,
                      selectInput("plot_metric",
                                  "Select Metric:",
-                                 choices = list("Basal Area" = "BA_total_mean",
-                                                "Tree Density" = "N_total_mean"),
-                                 selected = "BA_total_mean")
+                                 choices = list("Basal Area" = "BA_total",
+                                                "Tree Density" = "N_total"),
+                                 selected = "BA_total")
               ),
               column(6,
-                     checkboxInput("log_scale", "Log Scale", value = FALSE)
+                     checkboxInput("log_scale", "Use Log Scale", value = FALSE)
               )
             ),
 
@@ -336,7 +345,7 @@ ui <- dashboardPage(
             fluidRow(
               column(3, downloadButton("download_summary", "Summary CSV", class = "btn-info")),
               column(3, downloadButton("download_species", "Species CSV", class = "btn-info")),
-              column(3, downloadButton("download_dgp", "DGP CSV", class = "btn-info")),
+              column(3, downloadButton("download_dgp", "DBH Groups CSV", class = "btn-info")),
               column(3, downloadButton("download_predictions", "Full Data CSV", class = "btn-info"))
             )
           )
@@ -349,218 +358,253 @@ ui <- dashboardPage(
 # Define server logic
 server <- function(input, output, session) {
 
+  options(shiny.maxRequestSize = 100 * 1024^2)  # 100MB max file size
+
   # Reactive values to store results
   values <- reactiveValues(
     data = NULL,
     results = NULL,
-    progress = 0
+    progress = 0,
+    planting_init = NULL,
+    planting_post = NULL
   )
 
-  output$models_status <- renderText({
-    if (models_loaded()) {
-      "All models loaded and ready!"
-    } else {
-      "Models are still loading. Please wait..."
-    }
-  })
+  # Check if models are loaded - removed problematic reactive output
 
-  # Reactive values to store loaded models
-  # models <- reactiveValues(
-  #   mortality = NULL,
-  #   upgrowth = NULL,
-  #   recruitment = NULL
-  # )
-
-  # # Load models when needed (with error handling)
-  # observe({
-  #   tryCatch({
-  #     if (is.null(models$mortality)) {
-  #       models$mortality <- load_model("mortality")
-  #     }
-  #     if (is.null(models$upgrowth)) {
-  #       models$upgrowth <- load_model("upgrowth")
-  #     }
-  #     if (is.null(models$recruitment)) {
-  #       models$recruitment <- load_model("recruitment")
-  #     }
-  #   }, error = function(e) {
-  #     showNotification(
-  #       paste("Error loading models:", e$message),
-  #       type = "error",
-  #       duration = NULL
-  #     )
-  #   })
-  # })
-
-  # Update your validate_model_path function
-  # validate_model_path <- function(model_type) {
-  #   req(models[[model_type]])
-  #   return(models[[model_type]])
-  # }
-
-  # Check if models are loaded (much simpler now!)
-  if (!models_loaded()) {
-    showNotification("Models are still loading. Please wait...", type = "warning")
-    return()
-  }
-
-
-  # # Add this function to validate model paths
-  # validate_model_path <- function(model_path) {
-  #   expanded_path <- path.expand(model_path)
-  #
-  #   if (!file.exists(expanded_path)) {
-  #     # Try relative to app directory
-  #     app_dir <- system.file("shiny", "app_forecast_biomass", package = "matrixmodel")
-  #     app_relative_path <- file.path(app_dir, model_path)
-  #
-  #     if (file.exists(app_relative_path)) {
-  #       return(app_relative_path)
-  #     } else {
-  #       stop("Model file not found: ", expanded_path)
-  #     }
-  #   }
-  #
-  #   return(expanded_path)
-  # }
-
-  # Data preview
+  # Load main data file
   observeEvent(input$data_file, {
     req(input$data_file)
 
     tryCatch({
       values$data <- read.csv(input$data_file$datapath)
-      showNotification("Data loaded successfully!", type = "success")
+
+      # Find PlotID column
+      plot_cols <- c("PlotID", "plot_id", "Plot_ID", "plot", "Plot", "ID", "id")
+      plot_col <- intersect(plot_cols, names(values$data))
+
+      if (length(plot_col) > 0) {
+        plot_ids <- unique(values$data[[plot_col[1]]])
+        plot_ids <- sort(plot_ids[!is.na(plot_ids) & plot_ids != ""])
+
+        updateSelectizeInput(session, "plot_id",
+                             choices = plot_ids,
+                             selected = if(length(plot_ids) > 0) plot_ids[1] else "")
+      }
+
+      showNotification("Data loaded successfully!", type = "message")
+
     }, error = function(e) {
       showNotification(paste("Error loading data:", e$message), type = "error")
+      values$data <- NULL
     })
   })
 
-  # Show output location info
+  # Load planting files
+  observeEvent(input$plant_init, {
+    req(input$plant_init)
+    tryCatch({
+      values$planting_init <- read.csv(input$plant_init$datapath)
+      if (!all(c("SPCD", "TPH") %in% names(values$planting_init))) {
+        stop("Planting file must have SPCD and TPH columns")
+      }
+      showNotification("Initial planting file loaded", type = "message")
+    }, error = function(e) {
+      showNotification(paste("Error loading initial planting:", e$message), type = "error")
+      values$planting_init <- NULL
+    })
+  })
+
+  observeEvent(input$plant_post, {
+    req(input$plant_post)
+    tryCatch({
+      values$planting_post <- read.csv(input$plant_post$datapath)
+      if (!all(c("SPCD", "TPH") %in% names(values$planting_post))) {
+        stop("Planting file must have SPCD and TPH columns")
+      }
+      showNotification("Post-clearcut planting file loaded", type = "message")
+    }, error = function(e) {
+      showNotification(paste("Error loading post-clearcut planting:", e$message), type = "error")
+      values$planting_post <- NULL
+    })
+  })
+
+  # Show output location
   output$output_location_info <- renderText({
     output_path <- file.path(getwd(), input$output_folder)
-    paste("Output will be saved to:", output_path)
+    paste("Output will be saved to:\n", output_path)
   })
 
-  # Reactive to store available plot IDs
-  available_plots <- reactiveVal(character(0))
-
-
-  observeEvent(values$data, {
+  # Data preview
+  output$data_preview <- DT::renderDataTable({
     req(values$data)
 
-    # Try to find plot ID column with safer approach
-    plot_cols <- c("plot_id", "PlotID", "Plot_ID", "plot", "Plot", "ID", "id")
-    plot_col <- NULL
+    DT::datatable(
+      head(values$data, 100),
+      options = list(
+        pageLength = 10,
+        scrollX = TRUE,
+        dom = 'ltip'
+      ),
+      style = "bootstrap",
+      class = "table-bordered table-condensed"
+    ) %>%
+      formatStyle(columns = names(values$data),
+                  backgroundColor = "#34495e", color = "#ffffff")
+  })
 
-    for (col in plot_cols) {
-      if (col %in% names(values$data)) {
-        plot_col <- col
-        break
-      }
+  # Main forecast execution
+  observeEvent(input$run_forecast, {
+    req(values$data, input$plot_id)
+
+    # Check if models are available
+    if (!exists("models_loaded") || !models_loaded()) {
+      showNotification("Models not loaded. Please ensure the forecast_biomass function and models are available.",
+                       type = "error")
+      return()
     }
 
-    if (!is.null(plot_col)) {
-      plot_ids <- unique(values$data[[plot_col]])
-      plot_ids <- plot_ids[!is.na(plot_ids) & plot_ids != ""]
-      plot_ids <- sort(plot_ids)
+    # Reset progress
+    values$progress <- 0
+    updateProgressBar(session, "forecast_progress", value = 0)
 
-      if (length(plot_ids) > 0) {
-        available_plots(plot_ids)
+    tryCatch({
+      output$progress_text <- renderText({"Starting forecast simulation..."})
+      values$progress <- 10
+      updateProgressBar(session, "forecast_progress", value = 10)
 
-        # Update selectize with server-side approach
-        updateSelectizeInput(session, "plot_id",
-                             choices = plot_ids,
-                             server = TRUE,  # Server-side processing for performance
-                             selected = ifelse(length(plot_ids) > 0, plot_ids[1], ""))
-      } else {
-        available_plots(character(0))
-        updateSelectizeInput(session, "plot_id", choices = character(0))
-      }
+      # Prepare parameters exactly as the function expects them
+      clear_year_param <- if (is.na(input$clear_year)) NULL else input$clear_year
+
+      values$progress <- 30
+      updateProgressBar(session, "forecast_progress", value = 30)
+      output$progress_text <- renderText({"Running forecast model..."})
+
+      # Call the forecast_biomass function with proper parameters
+      values$results <- forecast_biomass(
+        save_to = getwd(),
+        data = values$data,
+        plot_id = input$plot_id,
+        years = input$years,
+        clear_start = input$clear_start,
+        clear_year = clear_year_param,
+        planting_init = values$planting_init,
+        planting_post = values$planting_post,
+        allow_colonization = input$allow_colonization,
+        minimal_if_clearcut = TRUE,
+        m_model = NULL,  # Use package defaults
+        u_model = NULL,  # Use package defaults
+        r_model = NULL,  # Use package defaults
+        output_folder_name = input$output_folder
+      )
+
+      values$progress <- 100
+      updateProgressBar(session, "forecast_progress", value = 100)
+      output$progress_text <- renderText({
+        paste("Forecast completed successfully for Plot:", values$results$plot_id)
+      })
+
+      showNotification("Forecast completed successfully!", type = "message")
+      updateTabItems(session, "tabs", "results")
+
+    }, error = function(e) {
+      showNotification(paste("Forecast error:", e$message), type = "error")
+      values$progress <- 0
+      updateProgressBar(session, "forecast_progress", value = 0)
+      output$progress_text <- renderText({paste("Error:", e$message)})
+    })
+  })
+
+  # Progress text output
+  output$progress_text <- renderText({
+    if (values$progress == 0) {
+      "Ready to run forecast. Upload data and click 'Run Forest Forecast' to begin."
+    } else if (values$progress < 100) {
+      "Processing forecast... Please wait."
+    } else if (!is.null(values$results)) {
+      paste("Forecast completed for Plot:", values$results$plot_id)
     } else {
-      # If no plot column found, use row identifiers
-      available_plots(paste0("Plot_", 1:min(10, nrow(values$data))))
-      updateSelectizeInput(session, "plot_id",
-                           choices = available_plots(),
-                           server = TRUE,
-                           selected = available_plots()[1])
-
-      showNotification("No plot ID column found. Using generated IDs.", type = "warning")
+      "Ready to run forecast."
     }
   })
 
-  # Add this helper function for safe value extraction
-  safe_value <- function(x, default = NA) {
-    if (length(x) == 0 || is.null(x) || is.na(x) || x == "") {
-      return(default)
-    }
-    return(x)
-  }
-
-  # # Enhanced refresh button with error handling
-  # observeEvent(input$refresh_plots, {
-  #   req(values$data)
-  #
-  #   column_choices <- names(values$data)
-  #   if (length(column_choices) == 0) {
-  #     showNotification("No columns available in data", type = "error")
-  #     return()
-  #   }
-  #
-  #   showModal(modalDialog(
-  #     title = "Select Plot ID Column",
-  #     selectInput("plot_column",
-  #                 "Choose the column that contains Plot IDs:",
-  #                 choices = column_choices,
-  #                 selected = safe_value(intersect(c("plot_id", "PlotID", "Plot_ID"), column_choices)[1])),
-  #     footer = tagList(
-  #       modalButton("Cancel"),
-  #       actionButton("confirm_plot_col", "Use Selected Column", class = "btn-success")
-  #     )
-  #   ))
-  # })
-
-  observeEvent(input$confirm_plot_col, {
-    req(input$plot_column, values$data)
-
-    if (input$plot_column %in% names(values$data)) {
-      plot_ids <- unique(values$data[[input$plot_column]])
-      plot_ids <- sort(plot_ids[!is.na(plot_ids)])
-      available_plots(plot_ids)
-
-      updateSelectizeInput(session, "plot_id",
-                           choices = plot_ids,
-                           selected = ifelse(length(plot_ids) > 0, plot_ids[1], ""))
-
-      removeModal()
-      showNotification(paste("Using column:", input$plot_column), type = "message")
-    }
+  # Value boxes
+  output$total_years <- renderValueBox({
+    years_val <- if (!is.null(values$results)) input$years else 0
+    valueBox(
+      value = years_val,
+      subtitle = "Simulation Years",
+      icon = icon("calendar"),
+      color = "blue"
+    )
   })
 
-  # Replace the observeEvent(input$data_preview_cell_clicked) with:
-  observeEvent(input$data_preview_cell_clicked, {
-    click <- input$data_preview_cell_clicked
-    req(click, values$data, click$row > 0)  # Ensure valid row
-
-    # Safely get the row data
-    if (click$row <= nrow(values$data)) {
-      row_data <- values$data[click$row, ]
-
-      # Try to find plot ID in the clicked row (safe approach)
-      plot_cols <- c("plot_id", "PlotID", "Plot_ID", "plot", "Plot", "ID")
-      plot_col <- intersect(plot_cols, names(row_data))
-
-      if (length(plot_col) > 0) {
-        plot_id <- as.character(row_data[[plot_col[1]]])
-        if (!is.na(plot_id) && plot_id != "") {
-          updateSelectizeInput(session, "plot_id", selected = plot_id)
-          showNotification(paste("Selected plot:", plot_id), type = "message")
-        }
-      }
-    }
+  output$plot_processed <- renderValueBox({
+    plot_val <- if (!is.null(values$results)) values$results$plot_id else "None"
+    valueBox(
+      value = plot_val,
+      subtitle = "Plot Processed",
+      icon = icon("tree"),
+      color = "green"
+    )
   })
 
-  # Enhanced data preview with clickable rows
+  output$final_ba <- renderValueBox({
+    ba_val <- if (!is.null(values$results) && !is.null(values$results$summary)) {
+      final_ba <- tail(values$results$summary$BA_total, 1)
+      round(final_ba, 1)
+    } else {
+      0
+    }
+    valueBox(
+      value = ba_val,
+      subtitle = "Final Basal Area (m2/ha)",
+      icon = icon("chart-line"),
+      color = "yellow"
+    )
+  })
+
+  # Results tables - fixed to match actual function output
+  output$summary_table <- DT::renderDataTable({
+    req(values$results$summary)
+
+    DT::datatable(
+      values$results$summary,
+      options = list(pageLength = 15, scrollX = TRUE),
+      style = "bootstrap"
+    ) %>%
+      formatRound(c("BA_total", "N_total"), 2) %>%
+      formatStyle(columns = names(values$results$summary),
+                  backgroundColor = "#34495e", color = "#ffffff")
+  })
+
+  output$species_table <- DT::renderDataTable({
+    req(values$results$species_year)
+
+    DT::datatable(
+      values$results$species_year,
+      options = list(pageLength = 15, scrollX = TRUE),
+      style = "bootstrap"
+    ) %>%
+      formatRound(c("BA_total", "N_total"), 2) %>%
+      formatStyle(columns = names(values$results$species_year),
+                  backgroundColor = "#34495e", color = "#ffffff")
+  })
+
+  output$dgp_table <- DT::renderDataTable({
+    req(values$results$dgp_year)
+
+    DT::datatable(
+      values$results$dgp_year,
+      options = list(pageLength = 15, scrollX = TRUE),
+      style = "bootstrap"
+    ) %>%
+      formatRound(c("BA_total", "N_total"), 2) %>%
+      formatStyle(columns = names(values$results$dgp_year),
+                  backgroundColor = "#34495e", color = "#ffffff")
+  })
+
+
+  # Data preview with clickable rows
   output$data_preview <- DT::renderDataTable({
     req(values$data)
 
@@ -587,224 +631,35 @@ server <- function(input, output, session) {
                   backgroundColor = "#34495e", color = "#ffffff")
   })
 
-  # Replace the plot summary observer with:
-  observeEvent(input$plot_id, {
-    req(input$plot_id, values$data)
+  # Handle table row clicks to select plot ID
+  observeEvent(input$data_preview_cell_clicked, {
+    click <- input$data_preview_cell_clicked
+    req(click, values$data, click$row > 0)
 
-    # Safe approach to find plot column
-    plot_cols <- c("plot_id", "PlotID", "Plot_ID", "plot", "Plot", "ID")
-    plot_col <- intersect(plot_cols, names(values$data))
+    if (click$row <= nrow(values$data)) {
+      row_data <- values$data[click$row, ]
 
-    if (length(plot_col) == 0) return()  # No plot column found
+      # Find plot ID column
+      plot_cols <- c("PlotID", "plot_id", "Plot_ID", "plot", "Plot", "ID", "id")
+      plot_col <- intersect(plot_cols, names(row_data))
 
-    plot_data <- values$data[values$data[[plot_col[1]]] == input$plot_id, ]
-
-    # Safe summary generation
-    output$plot_summary <- renderUI({
-      if (nrow(plot_data) == 0) {
-        return(tags$p("No data found for selected plot"))
+      if (length(plot_col) > 0) {
+        plot_id <- as.character(row_data[[plot_col[1]]])
+        if (!is.na(plot_id) && plot_id != "") {
+          updateSelectizeInput(session, "plot_id", selected = plot_id)
+          showNotification(paste("Selected plot:", plot_id), type = "message")
+        }
       }
-
-      tagList(
-        h5(paste("Plot", input$plot_id))
-      )
-    })
-  })
-
-
-  # Run forecast - SIMPLIFIED version with fixed notifications
-  observeEvent(input$run_forecast, {
-    req(values$data)
-
-    if (!models_loaded()) {
-      showNotification("Models are still loading. Please wait...",
-                       type = "warning")
-      return()
     }
-
-    # req(values$data, models$mortality, models$upgrowth, models$recruitment)
-
-    # Reset progress
-    updateProgressBar(session, "forecast_progress", value = 0)
-    values$progress <- 0
-
-    # Use tryCatch with proper error handling
-    tryCatch({
-      # Show simple message instead of notification for progress
-      output$progress_text <- renderText({"Starting forecast simulation..."})
-
-      # Create output directory in current working directory
-      output_dir <- file.path(getwd(), input$output_folder)
-      if (!dir.exists(output_dir)) {
-        dir.create(output_dir, recursive = TRUE)
-        # Use simple message instead of notification
-        output$progress_text <- renderText({paste("Created output directory:", output_dir)})
-      }
-
-      # validate_model_path <- function(model_path) {
-      #   # Extract just the filename from the path
-      #   model_name <- basename(model_path)
-      #
-      #   # Use our new loading system
-      #   tryCatch({
-      #     load_model(model_name)
-      #   }, error = function(e) {
-      #     stop("Failed to load model: ", model_name, "\nError: ", e$message)
-      #   })
-      # }
-
-      # Check if models are loaded
-      if (is.null(models$mortality) || is.null(models$upgrowth) || is.null(models$recruitment)) {
-        showNotification("Models are still loading. Please wait...", type = "warning")
-        return()
-      }
-
-      # Update progress
-      values$progress <- 30
-      updateProgressBar(session, "forecast_progress", value = 30)
-      output$progress_text <- renderText({"Loading models..."})
-
-      # Run the forecast
-      values$results <- forecast_biomass(
-        save_to = output_dir,
-        data = values$data,
-        plot_id = input$plot_id,
-        years = input$years,
-        clear_start = input$clear_start,
-        clear_year = input$clear_year,
-        planting_init = input$planting_init,
-        planting_post = input$planting_post,
-        allow_colonization = input$allow_colonization,
-        # m_model = models$mortality,
-        # u_model = models$upgrowth,
-        # r_model = models$recruitment,
-        output_folder_name = ""
-      )
-
-      # Complete progress
-      values$progress <- 100
-      updateProgressBar(session, "forecast_progress", value = 100)
-      output$progress_text <- renderText({paste("Forecast completed for Plot:", input$plot_id)})
-
-      # Show success message (using safe notification)
-      showNotification("Forecast completed successfully!", type = "message")
-      updateTabItems(session, "tabs", "results")
-
-    }, error = function(e) {
-      # Safe error notification
-      showNotification(paste("Forecast error:", e$message), type = "error")
-      values$progress <- 0
-      updateProgressBar(session, "forecast_progress", value = 0)
-      output$progress_text <- renderText({paste("Error:", e$message)})
-    })
-  })
-
-  # Progress text
-  output$progress_text <- renderText({
-    if (values$progress == 0) {
-      "Ready to run forecast. Click 'Run Forecast' to begin."
-    } else if (values$progress < 100) {
-      paste("Processing forecast... Please wait.")
-    } else {
-      paste("Forecast completed for Plot:", values$results$plot_id)
-    }
-  })
-
-  # Value boxes
-  output$total_years <- renderValueBox({
-    years_val <- if (!is.null(values$results)) input$years else 0
-    valueBox(
-      value = years_val,
-      subtitle = "Simulation Years",
-      icon = icon("calendar"),
-      color = "blue"
-    )
-  })
-
-  output$plot_processed <- renderValueBox({
-    plot_val <- if (!is.null(values$results)) values$results$plot_id else "None"
-    valueBox(
-      value = plot_val,
-      subtitle = "Plot Processed",
-      icon = icon("tree"),
-      color = "green"
-    )
-  })
-
-  output$final_ba <- renderValueBox({
-    ba_val <- if (!is.null(values$results)) {
-      final_ba <- tail(values$results$summary_by_year$BA_total_mean, 1)
-      round(final_ba, 1)
-    } else {
-      0
-    }
-    valueBox(
-      value = ba_val,
-      subtitle = "Final Basal Area (m2/ha)",
-      icon = icon("chart-line"),
-      color = "yellow"
-    )
-  })
-
-  # Results tables
-  output$year_summary_table <- DT::renderDataTable({
-    req(values$results)
-
-    DT::datatable(
-      values$results$summary_by_year,
-      options = list(pageLength = 15, scrollX = TRUE),
-      style = "bootstrap"
-    ) %>%
-      formatRound(c("BA_total_mean", "N_total_mean"), 2) %>%
-      formatStyle(columns = names(values$results$summary_by_year),
-                  backgroundColor = "#34495e", color = "#ffffff")
-  })
-
-  output$species_table <- DT::renderDataTable({
-    req(values$results)
-
-    DT::datatable(
-      values$results$species_year,
-      options = list(pageLength = 15, scrollX = TRUE),
-      style = "bootstrap"
-    ) %>%
-      formatRound(c("BA_total", "N_total"), 2) %>%
-      formatStyle(columns = names(values$results$species_year),
-                  backgroundColor = "#34495e", color = "#ffffff")
-  })
-
-  output$dgp_table <- DT::renderDataTable({
-    req(values$results)
-
-    DT::datatable(
-      values$results$dgp_year,
-      options = list(pageLength = 15, scrollX = TRUE),
-      style = "bootstrap"
-    ) %>%
-      formatRound(c("BA_total", "N_total"), 2) %>%
-      formatStyle(columns = names(values$results$dgp_year),
-                  backgroundColor = "#34495e", color = "#ffffff")
-  })
-
-  output$predictions_table <- DT::renderDataTable({
-    req(values$results)
-
-    DT::datatable(
-      values$results$predictions,
-      options = list(pageLength = 10, scrollX = TRUE),
-      style = "bootstrap"
-    ) %>%
-      formatStyle(columns = names(values$results$predictions),
-                  backgroundColor = "#34495e", color = "#ffffff")
   })
 
   # Time series plot
   output$time_series_plot <- renderPlotly({
-    req(values$results)
+    req(values$results$summary)
 
-    y_title <- if (input$plot_metric == "BA_total_mean") "Basal Area (m2/ha)" else "Tree Density (trees/ha)"
+    y_title <- if (input$plot_metric == "BA_total") "Basal Area (m2/ha)" else "Tree Density (trees/ha)"
 
-    p <- plot_ly(values$results$summary_by_year,
+    p <- plot_ly(values$results$summary,
                  x = ~Year,
                  y = ~get(input$plot_metric),
                  type = 'scatter',
@@ -812,11 +667,8 @@ server <- function(input, output, session) {
                  line = list(color = '#3498db', width = 3),
                  marker = list(color = '#e74c3c', size = 8)) %>%
       layout(
-        title = paste("Forest", gsub("_", " ",
-                                     gsub("_mean", "", input$plot_metric)),
-                      "Over Time"),
-        xaxis = list(title = "Year", color = "white",
-                     gridcolor = "#4a6572"),
+        title = paste("Forest", gsub("_", " ", input$plot_metric), "Over Time"),
+        xaxis = list(title = "Year", color = "white", gridcolor = "#4a6572"),
         yaxis = list(title = y_title,
                      type = if (input$log_scale) "log" else "linear",
                      color = "white", gridcolor = "#4a6572"),
@@ -830,17 +682,17 @@ server <- function(input, output, session) {
 
   # Species composition plot
   output$species_composition_plot <- renderPlotly({
-    req(values$results)
+    req(values$results$species_year)
 
     species_data <- values$results$species_year %>%
       group_by(Year) %>%
-      mutate(BA_percent = BA_total / sum(BA_total) * 100)
+      mutate(BA_percent = BA_total / sum(BA_total, na.rm = TRUE) * 100)
 
     p <- plot_ly(species_data,
                  x = ~Year,
                  y = ~BA_percent,
                  color = ~SpeciesGroup,
-                 colors = "set3",
+                 colors = "Set3",
                  type = 'scatter',
                  mode = 'lines',
                  stackgroup = 'one') %>%
@@ -861,15 +713,15 @@ server <- function(input, output, session) {
   output$download_summary <- downloadHandler(
     filename = function() paste0("forecast_summary_", Sys.Date(), ".csv"),
     content = function(file) {
-      req(values$results)
-      write.csv(values$results$summary_by_year, file, row.names = FALSE)
+      req(values$results$summary)
+      write.csv(values$results$summary, file, row.names = FALSE)
     }
   )
 
   output$download_species <- downloadHandler(
     filename = function() paste0("species_summary_", Sys.Date(), ".csv"),
     content = function(file) {
-      req(values$results)
+      req(values$results$species_year)
       write.csv(values$results$species_year, file, row.names = FALSE)
     }
   )
@@ -877,7 +729,7 @@ server <- function(input, output, session) {
   output$download_dgp <- downloadHandler(
     filename = function() paste0("dgp_summary_", Sys.Date(), ".csv"),
     content = function(file) {
-      req(values$results)
+      req(values$results$dgp_year)
       write.csv(values$results$dgp_year, file, row.names = FALSE)
     }
   )
@@ -885,7 +737,7 @@ server <- function(input, output, session) {
   output$download_predictions <- downloadHandler(
     filename = function() paste0("full_predictions_", Sys.Date(), ".csv"),
     content = function(file) {
-      req(values$results)
+      req(values$results$predictions)
       write.csv(values$results$predictions, file, row.names = FALSE)
     }
   )

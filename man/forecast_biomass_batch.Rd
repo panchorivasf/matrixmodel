@@ -14,9 +14,6 @@ forecast_biomass_batch(
   planting_post = NULL,
   allow_colonization = TRUE,
   minimal_if_clearcut = TRUE,
-  m_model = "./models/model_mortality.rds",
-  u_model = "./models/model_upgrowth.rds",
-  r_model = "./models/model_recruitment.rds",
   output_folder_name = "forecast_batch_results",
   n_cores = -1
 )
@@ -50,12 +47,6 @@ species pool.)}
 
 \item{minimal_if_clearcut}{Logical.if any clear-cut happens, only save
 summary and year_summary.}
-
-\item{m_model}{Path to the mortality model '.rds' file.}
-
-\item{u_model}{Path to the upgrowth model '.rds' file.}
-
-\item{r_model}{Path to the recruitment model '.rds' file.}
 
 \item{output_folder_name}{Character. A name for the output folder to be
 created in the 'save_to' directory.}

@@ -3,6 +3,7 @@
 export(.matrixmodel_models)
 export(app_forecast_biomass)
 export(app_select_stand)
+export(check_cache_status)
 export(clear_model_cache)
 export(forecast_biomass)
 export(forecast_biomass_batch)
