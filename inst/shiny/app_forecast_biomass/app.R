@@ -115,7 +115,6 @@ ui <- dashboardPage(
       # Setup tab
       tabItem(
         tabName = "setup",
-        fluidColum
         fluidRow(
           box(
             title = "Data Input",
