@@ -1,5 +1,6 @@
+# zzz.R
 .onLoad <- function(libname, pkgname) {
-  # Set options
+  # Set cache directory option and increase timeout
   op <- options()
   op.matrixmodel <- list(
     matrixmodel.cache_dir = tools::R_user_dir("matrixmodel", "cache")
@@ -7,36 +8,30 @@
   toset <- !(names(op.matrixmodel) %in% names(op))
   if (any(toset)) options(op.matrixmodel[toset])
 
-  # Load models automatically in the background
-  # This will download them if not cached
-  if (interactive()) {
-    message("MatrixModel: Loading models in background...")
-    future::plan(future::multisession)  # Use background process
-    future::future({
-      tryCatch({
-        .load_models()
-        message("MatrixModel: All models loaded successfully!")
-      }, error = function(e) {
-        warning("MatrixModel: Failed to load models: ", e$message)
-      })
-    })
-  }
+  # Increase default timeout for large downloads
+  options(timeout = 600)  # 10 minutes
 }
 
 .onAttach <- function(libname, pkgname) {
-  packageStartupMessage(
-    "Welcome to the Matrix Model package!\n",
-    "Large model files are being loaded in the background from\n",
-    "Purdue's PURR repository. This may take a few moments.\n",
-    "Use models_loaded() to check if models are ready."
-  )
+  packageStartupMessage("Welcome to the Matrix Model package!")
 
-  # For non-interactive sessions, load models immediately
-  if (!interactive()) {
-    tryCatch({
-      .load_models()
-    }, error = function(e) {
-      packageStartupMessage("Warning: Failed to load models: ", e$message)
-    })
+  # Try to load models
+  success <- tryCatch({
+    .load_models_with_fallback()
+  }, error = function(e) {
+    packageStartupMessage("Model loading error: ", e$message)
+    FALSE
+  })
+
+  if (success) {
+    packageStartupMessage("All models loaded successfully!")
+  } else if (models_loaded()) {
+    packageStartupMessage("Models loaded from cache.")
+  } else {
+    packageStartupMessage(
+      "Could not load models automatically.\n",
+      "Use load_all_models() to retry download,\n",
+      "or model_install_instructions() for manual setup."
+    )
   }
 }

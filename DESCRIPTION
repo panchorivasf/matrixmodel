@@ -40,7 +40,6 @@ Imports:
     readr,
     htmlwidgets,
     glue,
-    magick,
     magrittr,
     tidyr,
     shiny,
@@ -51,12 +50,12 @@ Imports:
     shinythemes,
     shinydashboard,
     shinyWidgets,
-    patchwork,
-    future
+    patchwork
 Suggests:
     knitr,
     rmarkdown,
-    testthat
+    testthat,
+    magick
 VignetteBuilder: knitr
 URL: https://github.com/panchorivasf/matrixmodel, https://panchorivasf.github.io/matrixmodel/
 BugReports: https://github.com/panchorivasf/matrixmodel/issues 

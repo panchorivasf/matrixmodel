@@ -67,20 +67,38 @@ forecast_biomass <- function(save_to = NULL,
     clear_year <- NA_integer_
   }
 
+
   # Use package models if not provided
   if (is.null(m_model)) {
     if (!models_loaded()) {
-      stop("Models not loaded yet. Please wait or use get_model() to load them.")
+      stop("Mortality model not loaded. Please wait for package initialization or use load_all_models()")
     }
     m_model <- get_model("mortality")
   }
 
   if (is.null(u_model)) {
+    if (!models_loaded()) {
+      stop("Upgrowth model not loaded. Please wait for package initialization or use load_all_models()")
+    }
     u_model <- get_model("upgrowth")
   }
 
   if (is.null(r_model)) {
+    if (!models_loaded()) {
+      stop("Recruitment model not loaded. Please wait for package initialization or use load_all_models()")
+    }
     r_model <- get_model("recruitment")
+  }
+
+  # Validate that models are actually model objects, not file paths
+  if (is.character(m_model)) {
+    stop("m_model should be a model object, not a file path. Use get_model('mortality') or load the package first.")
+  }
+  if (is.character(u_model)) {
+    stop("u_model should be a model object, not a file path. Use get_model('upgrowth') or load the package first.")
+  }
+  if (is.character(r_model)) {
+    stop("r_model should be a model object, not a file path. Use get_model('recruitment') or load the package first.")
   }
 
   # Create main output directory
@@ -187,9 +205,12 @@ forecast_biomass <- function(save_to = NULL,
     missing_u_vars <- setdiff(required_u_vars, names(pred_vec))
     missing_r_vars <- setdiff(required_r_vars, names(pred_vec))
 
-    if (length(missing_m_vars) > 0) stop(' Missing variables for mortality model: ', paste(missing_m_vars, collapse = ', '))
-    if (length(missing_u_vars) > 0) stop(' Missing variables for upgrowth model: ', paste(missing_u_vars, collapse = ', '))
-    if (length(missing_r_vars) > 0) stop(' Missing variables for recruitment model: ', paste(missing_r_vars, collapse = ', '))
+    if (length(missing_m_vars) > 0) stop(' Missing variables for mortality model: ',
+                                         paste(missing_m_vars, collapse = ', '))
+    if (length(missing_u_vars) > 0) stop(' Missing variables for upgrowth model: ',
+                                         paste(missing_u_vars, collapse = ', '))
+    if (length(missing_r_vars) > 0) stop(' Missing variables for recruitment model: ',
+                                         paste(missing_r_vars, collapse = ', '))
 
     # 2) Predict and update (divide upgrowth by bin width 5)
     pred_vec <- pred_vec %>%

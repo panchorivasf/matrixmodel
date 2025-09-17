@@ -27,9 +27,9 @@
 project_biomass_batch <- function(save_to = NULL,
                                   data_source = NULL,
                                   years = 50,
-                                  m_model = "./models/model_mortality.rds",
-                                  u_model = "./models/model_upgrowth.rds",
-                                  r_model = "./models/model_recruitment.rds",
+                                  m_model = NULL,
+                                  u_model = NULL,
+                                  r_model = NULL,
                                   output_folder_name = "simulation_results_batch",
                                   n_cores = -1) {
 

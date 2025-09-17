@@ -201,25 +201,25 @@ ui <- dashboardPage(
                          icon = icon("play"))
           ),
 
-          box(
-            title = "Model Files",
-            status = "info",
-            solidHeader = TRUE,
-            width = 6,
-
-            textInput("m_model",
-                      "Mortality Model Path",
-                      value = "models/model_mortality.rds"),
-
-            textInput("u_model",
-                      "Upgrowth Model Path",
-                      value = "models/model_upgrowth.rds"),
-
-            textInput("r_model",
-                      "Recruitment Model Path",
-                      value = "models/model_recruitment.rds")
-
-          )
+          # box(
+          #   title = "Model Files",
+          #   status = "info",
+          #   solidHeader = TRUE,
+          #   width = 6,
+          #
+          #   textInput("m_model",
+          #             "Mortality Model Path",
+          #             value = "models/model_mortality.rds"),
+          #
+          #   textInput("u_model",
+          #             "Upgrowth Model Path",
+          #             value = "models/model_upgrowth.rds"),
+          #
+          #   textInput("r_model",
+          #             "Recruitment Model Path",
+          #             value = "models/model_recruitment.rds")
+          #
+          # )
         ),
 
         fluidRow(
@@ -393,9 +393,15 @@ server <- function(input, output, session) {
   # })
 
   # Update your validate_model_path function
-  validate_model_path <- function(model_type) {
-    req(models[[model_type]])
-    return(models[[model_type]])
+  # validate_model_path <- function(model_type) {
+  #   req(models[[model_type]])
+  #   return(models[[model_type]])
+  # }
+
+  # Check if models are loaded (much simpler now!)
+  if (!models_loaded()) {
+    showNotification("Models are still loading. Please wait...", type = "warning")
+    return()
   }
 
 
