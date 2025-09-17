@@ -5,16 +5,16 @@
 
 # Direct download URLs (permanent since Zenodo doesn't allow changes)
 MODEL_URLS <- list(
-  mortality = "https://zenodo.org/records/17138782/files/model_indiana_mortality.rds?download=1",
-  upgrowth = "https://zenodo.org/records/17138782/files/model_indiana_upgrowth.rds?download=1",
-  recruitment = "https://zenodo.org/records/17138782/files/model_indiana_recruitment.rds?download=1"
+  mortality = "https://zenodo.org/records/17139020/files/model_indiana_mortality_v2.rds?download=1",
+  upgrowth = "https://zenodo.org/records/17139020/files/model_indiana_upgrowth_v2.rds?download=1",
+  recruitment = "https://zenodo.org/records/17139020/files/model_indiana_recruitment_v2.rds?download=1"
 )
 
 # File names for caching
 MODEL_FILES <- list(
-  mortality = "model_indiana_mortality.rds",
-  upgrowth = "model_indiana_upgrowth.rds",
-  recruitment = "model_indiana_recruitment.rds"
+  mortality = "model_indiana_mortality_v2.rds",
+  upgrowth = "model_indiana_upgrowth_v2.rds",
+  recruitment = "model_indiana_recruitment_v2.rds"
 )
 
 # Internal function to load models from Zenodo
@@ -182,7 +182,7 @@ model_install_instructions <- function() {
 
   cat("Manual Model Installation Instructions:\n")
   cat("======================================\n")
-  cat("1. Visit: https://zenodo.org/record/17138782\n")
+  cat("1. Visit: https://zenodo.org/record/17139020\n")
   cat("2. Download these three files:\n")
   for (model_type in names(MODEL_FILES)) {
     cat("   - ", MODEL_FILES[[model_type]], "\n")
