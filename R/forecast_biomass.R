@@ -312,10 +312,10 @@ forecast_biomass <- function(save_to = NULL,
 
     cat("Processing plot:", t1$PlotID[1], "\n")
   }
-
-  m <- readRDS(m_model)
-  u <- readRDS(u_model)
-  r <- readRDS(r_model)
+#
+#   m <- readRDS(m_model)
+#   u <- readRDS(u_model)
+#   r <- readRDS(r_model)
 
   DBH <- (seq(10, 80, 5)) + 2.5
   DBH[15] <- 85
